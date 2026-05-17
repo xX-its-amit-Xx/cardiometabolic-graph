@@ -1,0 +1,42 @@
+# Cookbook
+
+Real-world worked examples on top of the cardiometabolic graph. Each
+example is a self-contained Python module under `cookbook/<NN_name>/` with:
+
+- `README.md` — the clinical or product question, the data flow, expected
+  outputs, and a short *"how a team would use this"* section.
+- `run.py` — a single `python -m cookbook.<NN_name>.run` entry-point.
+- `figures/` — any plots the example produces.
+
+All examples are designed to **run end-to-end in under 5 minutes** on a
+laptop after `make pipeline`, and **none of them require real patient
+data** — they use the synthetic engagement stream and the MIMIC-IV demo
+subset (or a fully synthetic fallback when MIMIC isn't installed).
+
+## Index
+
+| # | Example | What real-world question it answers | Used by |
+|---|---------|--------------------------------------|---------|
+| 1 | [`01_at_risk_cohort`](01_at_risk_cohort/README.md) | "Which 50 patients should our care coordinators call this week?" | DTx care-team triage |
+| 2 | [`02_reengagement_outreach`](02_reengagement_outreach/README.md) | "Which lapsing users will respond to a re-engagement push?" | Product / growth ops |
+| 3 | [`03_pathway_anchored_explanation`](03_pathway_anchored_explanation/README.md) | "Why does the model think this specific patient is rising?" | Clinical safety review |
+| 4 | [`04_cohort_drift_monitor`](04_cohort_drift_monitor/README.md) | "Is our intake population this month different from last quarter?" | MLOps / monitoring |
+
+## How to run all of them
+
+```bash
+make pipeline                        # one-time setup
+python -m cookbook.01_at_risk_cohort.run
+python -m cookbook.02_reengagement_outreach.run
+python -m cookbook.03_pathway_anchored_explanation.run --patient SYN000017
+python -m cookbook.04_cohort_drift_monitor.run --window-days 30
+```
+
+Outputs land under each example's `figures/` directory and a one-page
+markdown report under `cookbook/<example>/report.md`.
+
+## Why a cookbook
+
+A README explains *what* the repo does. A cookbook proves *what you can
+actually do with it*. Each example here corresponds to a concrete request a
+real DTx team or a real academic group has actually wanted to answer.
