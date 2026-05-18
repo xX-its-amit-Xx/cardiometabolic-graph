@@ -16,7 +16,7 @@ import streamlit as st
 from etl._common import processed_path, synthetic_path
 from models._features import load_cached
 
-from ._summary import PatientSummaryInputs, build_summary
+from dashboard._summary import PatientSummaryInputs, build_summary
 
 st.set_page_config(page_title="Cardiometabolic Graph — Clinician View", layout="wide", page_icon="🩺")
 
