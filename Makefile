@@ -47,6 +47,7 @@ down:
 
 synth:
 	$(PYTHON) -m data.synthetic.generate_engagement_logs --out data/synthetic --patients 500 --days 180
+	$(PYTHON) -m data.synthetic.generate_labs --out data/processed/labs.parquet
 
 etl:
 	$(PYTHON) -m etl.load_mimic

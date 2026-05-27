@@ -19,12 +19,15 @@ from .engagement_dropout import train_dropout
 from .gbm_baseline import train_regressor
 
 
-def _load_inputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Load labs / events / patients from cache if present, else fall back
-    to synthetic only (lets ``make pipeline`` work without real data)."""
+def _load_inputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Load labs / events / patients / archetypes from cache if present, else
+    fall back to synthetic only (lets ``make pipeline`` work without real
+    data). Archetypes are the synthetic ground-truth dropout label and are
+    only present in synthetic runs."""
     labs_p = processed_path() / "labs.parquet"
     pats_p = processed_path() / "patients.parquet"
     events_p = synthetic_path() / "engagement_events.parquet"
+    arche_p = synthetic_path() / "engagement_archetypes.parquet"
 
     labs = pd.read_parquet(labs_p) if labs_p.exists() else pd.DataFrame(
         columns=["patient_id", "name", "value", "taken_ts"]
@@ -35,16 +38,18 @@ def _load_inputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     events = pd.read_parquet(events_p) if events_p.exists() else pd.DataFrame(
         columns=["patient_id", "kind", "ts", "value"]
     )
+    archetypes = pd.read_parquet(arche_p) if arche_p.exists() else pd.DataFrame(
+        columns=["patient_id", "archetype"]
+    )
 
     if patients.empty and not events.empty:
-        # Bootstrap patients from synthetic engagement so feature build has rows
         patients = pd.DataFrame({
             "patient_id": events["patient_id"].unique(),
             "sex": "U",
             "birth_year": 1980,
         })
 
-    return labs, events, patients
+    return labs, events, patients, archetypes
 
 
 def main() -> None:
@@ -59,8 +64,8 @@ def main() -> None:
     cached = load_cached()
     if cached is None:
         log.info("no cached features; building from inputs")
-        labs, events, patients = _load_inputs()
-        ff = build_features(labs, events, patients, cache=True)
+        labs, events, patients, archetypes = _load_inputs()
+        ff = build_features(labs, events, patients, cache=True, archetypes=archetypes)
     else:
         ff = cached
         log.info("using cached feature frame (%d rows)", len(ff.X))

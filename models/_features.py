@@ -88,18 +88,43 @@ def build_features(
     events: pd.DataFrame,
     patients: pd.DataFrame,
     cache: bool = True,
+    archetypes: pd.DataFrame | None = None,
 ) -> FeatureFrame:
     """Construct the canonical feature frame.
 
     Targets:
-        y_hba1c   = each patient's HbA1c after the most recent observation
-                    window. For the demo we synthesize this from the last
-                    observed value + a small mean-reverting shift so the
-                    pipeline can train without waiting on real follow-up.
-        y_dropout = 1 if app-event count in the last 14 days of the series
-                    is below 25% of the patient's prior 14-day average.
+        y_hba1c   = each patient's HbA1c at the LAST recorded visit. Earlier
+                    visits feed the feature aggregates; we predict the most
+                    recent value as a stand-in for the next-visit target.
+                    Uses real values when present; otherwise mean-reverts
+                    from synthetic seed.
+        y_dropout = 1 for patients in the 'early_dropout' archetype when
+                    archetype labels are available (synthetic ground truth);
+                    otherwise falls back to a within-series decay heuristic
+                    that compares first-vs-last 14-day activity.
     """
-    lab_features = _build_lab_aggregates(labs)
+    # Hold out the most-recent visit per patient for the regression target,
+    # then build aggregates over only the earlier visits so the target isn't
+    # trivially leaked.
+    last_hba1c_target: pd.Series
+    if not labs.empty and "name" in labs.columns:
+        labs_sorted = labs.copy()
+        labs_sorted["taken_ts"] = pd.to_datetime(labs_sorted["taken_ts"], utc=True)
+        hba1c_only = labs_sorted[labs_sorted["name"] == "HbA1c"]
+        if not hba1c_only.empty:
+            last_idx = hba1c_only.sort_values("taken_ts").groupby("patient_id").tail(1).index
+            last_hba1c_target = (
+                hba1c_only.loc[last_idx].set_index("patient_id")["value"].astype(float)
+            )
+            feature_labs = labs_sorted.drop(index=last_idx)
+        else:
+            last_hba1c_target = pd.Series(dtype=float)
+            feature_labs = labs_sorted
+    else:
+        last_hba1c_target = pd.Series(dtype=float)
+        feature_labs = labs
+
+    lab_features = _build_lab_aggregates(feature_labs)
     eng_features = _build_engagement_features(events)
     static = patients.set_index("patient_id")[[c for c in ("sex", "birth_year") if c in patients.columns]]
 
@@ -109,27 +134,40 @@ def build_features(
         .fillna(0)
     )
 
-    # Targets
+    if "sex" in X.columns:
+        X = pd.concat(
+            [X.drop(columns=["sex"]), pd.get_dummies(X["sex"], prefix="sex", dtype=float)],
+            axis=1,
+        )
+
     rng = np.random.default_rng(0)
-    hba1c_last_col = "HbA1c_last"
-    if hba1c_last_col in X.columns:
-        base = X[hba1c_last_col].replace(0, np.nan).fillna(X[hba1c_last_col].mean() or 6.5)
-        y_hba1c = base + rng.normal(0, 0.4, size=len(X)) + 0.05 * (base - base.mean())
+    if not last_hba1c_target.empty:
+        y_hba1c = last_hba1c_target.reindex(X.index)
+        # For any patient without a held-out HbA1c, mean-impute then add
+        # a small per-row jitter so the target isn't pathologically
+        # constant for that subset.
+        fallback_mean = float(y_hba1c.dropna().mean()) if y_hba1c.notna().any() else 6.5
+        missing_mask = y_hba1c.isna()
+        if missing_mask.any():
+            y_hba1c.loc[missing_mask] = fallback_mean + rng.normal(0, 0.3, size=missing_mask.sum())
     else:
         y_hba1c = pd.Series(rng.normal(6.5, 1.0, size=len(X)), index=X.index)
 
-    # Dropout from engagement series
-    if not events.empty:
+    if archetypes is not None and not archetypes.empty:
+        arch_series = archetypes.set_index("patient_id")["archetype"].reindex(X.index)
+        y_dropout = (arch_series == "early_dropout").astype(int)
+    elif not events.empty:
         ev = events.copy()
         ev["ts"] = pd.to_datetime(ev["ts"], utc=True)
         last_day = ev["ts"].max()
+        first_day = ev["ts"].min()
+        # First 14 days vs last 14 days of the series — catches archetypes
+        # that drop off early, not just those tailing off at the end.
+        first_14 = ev[ev["ts"] <= first_day + pd.Timedelta(days=14)].groupby("patient_id").size()
         last_14 = ev[ev["ts"] >= last_day - pd.Timedelta(days=14)].groupby("patient_id").size()
-        prev_14 = ev[
-            (ev["ts"] >= last_day - pd.Timedelta(days=28)) & (ev["ts"] < last_day - pd.Timedelta(days=14))
-        ].groupby("patient_id").size()
-        joined = pd.concat([last_14.rename("recent"), prev_14.rename("prior")], axis=1).fillna(0)
+        joined = pd.concat([last_14.rename("recent"), first_14.rename("baseline")], axis=1).fillna(0)
         joined = joined.reindex(X.index, fill_value=0)
-        y_dropout = ((joined["recent"] + 1) / (joined["prior"] + 1) < 0.25).astype(int)
+        y_dropout = ((joined["recent"] + 1) / (joined["baseline"] + 1) < 0.25).astype(int)
     else:
         y_dropout = pd.Series(0, index=X.index, dtype=int)
 
