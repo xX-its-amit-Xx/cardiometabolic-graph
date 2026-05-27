@@ -46,8 +46,15 @@ data/raw/*
 !data/raw/README.md
 data/processed/*
 !data/processed/.gitkeep
+# synthetic outputs are reproducible from the generator, no need to commit
 data/synthetic/*.csv
 data/synthetic/*.parquet
+
+# artifacts are reproducible; only commit the deterministic JSON summaries
+artifacts/*/*.joblib
+artifacts/*/*.pt
+artifacts/*/shap_values.parquet
+artifacts/*/*_predictions.parquet
 
 # Model artefacts
 artifacts/
