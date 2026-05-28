@@ -4,55 +4,55 @@ _Top 50 patients by predicted HbA1c rise over the next 90 days._
 
 | Rank | Patient | Last HbA1c | Predicted | Δ | Why |
 |------|---------|------------|-----------|---|-----|
-| 1 | `SYN000333` | 7.3% | 8.9% | +1.61 | HbA1c last observed at 7.3%. Top factors: glucose_serum_last (raising), glucose_serum_max (raising), HbA1c_max (raising). |
-| 2 | `SYN000109` | 6.2% | 7.3% | +1.11 | HbA1c last observed at 6.2%. Top factors: glucose_serum_last (raising), HbA1c_min (lowering), glucose_serum_max (lowering). |
-| 3 | `SYN000467` | 7.9% | 8.9% | +1.01 | HbA1c last observed at 7.9%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), ldl_min (raising). |
-| 4 | `SYN000300` | 9.2% | 10.2% | +1.00 | HbA1c last observed at 9.2%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), glucose_serum_max (raising). |
-| 5 | `SYN000482` | 6.8% | 7.8% | +0.98 | HbA1c last observed at 6.8%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), glucose_serum_max (lowering). |
-| 6 | `SYN000237` | 7.8% | 8.8% | +0.97 | HbA1c last observed at 7.8%. Top factors: glucose_serum_last (raising), triglycerides_last (raising), glucose_serum_max (raising). |
-| 7 | `SYN000491` | 7.3% | 8.1% | +0.80 | HbA1c last observed at 7.3%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), glucose_serum_max (lowering). |
-| 8 | `SYN000372` | 6.9% | 7.6% | +0.74 | HbA1c last observed at 6.9%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), glucose_serum_max (lowering). |
-| 9 | `SYN000065` | 6.9% | 7.6% | +0.74 | HbA1c last observed at 6.9%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), glucose_serum_max (lowering). |
-| 10 | `SYN000325` | 7.3% | 7.9% | +0.65 | HbA1c last observed at 7.3%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), glucose_serum_max (lowering). |
-| 11 | `SYN000125` | 7.1% | 7.7% | +0.56 | HbA1c last observed at 7.1%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), glucose_serum_max (lowering). |
-| 12 | `SYN000456` | 7.6% | 8.2% | +0.56 | HbA1c last observed at 7.6%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), glucose_serum_max (raising). |
-| 13 | `SYN000430` | 9.9% | 10.4% | +0.49 | HbA1c last observed at 9.9%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), triglycerides_last (raising). |
-| 14 | `SYN000440` | 8.0% | 8.4% | +0.39 | HbA1c last observed at 8.0%. Top factors: glucose_serum_last (raising), triglycerides_last (raising), glucose_serum_mean (raising). |
-| 15 | `SYN000023` | 8.5% | 8.9% | +0.39 | HbA1c last observed at 8.5%. Top factors: glucose_serum_last (raising), glucose_serum_max (raising), glucose_serum_mean (raising). |
-| 16 | `SYN000267` | 7.7% | 8.1% | +0.38 | HbA1c last observed at 7.7%. Top factors: glucose_serum_last (raising), triglycerides_last (raising), glucose_serum_mean (raising). |
-| 17 | `SYN000458` | 8.0% | 8.4% | +0.38 | HbA1c last observed at 8.0%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), HbA1c_mean (raising). |
-| 18 | `SYN000117` | 8.4% | 8.8% | +0.37 | HbA1c last observed at 8.4%. Top factors: glucose_serum_last (raising), glucose_serum_max (raising), glucose_serum_mean (raising). |
-| 19 | `SYN000290` | 6.8% | 7.2% | +0.37 | HbA1c last observed at 6.8%. Top factors: glucose_serum_last (raising), glucose_serum_mean (lowering), ev_bucket_3 (raising). |
-| 20 | `SYN000022` | 8.5% | 8.8% | +0.34 | HbA1c last observed at 8.5%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), HbA1c_min (raising). |
-| 21 | `SYN000074` | 6.3% | 6.6% | +0.32 | HbA1c last observed at 6.3%. Top factors: glucose_serum_last (lowering), hdl_last (raising), triglycerides_max (lowering). |
-| 22 | `SYN000006` | 8.6% | 8.9% | +0.32 | HbA1c last observed at 8.6%. Top factors: glucose_serum_last (raising), triglycerides_last (raising), glucose_serum_max (raising). |
-| 23 | `SYN000031` | 8.4% | 8.7% | +0.30 | HbA1c last observed at 8.4%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), HbA1c_mean (raising). |
-| 24 | `SYN000287` | 8.4% | 8.7% | +0.29 | HbA1c last observed at 8.4%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), triglycerides_last (raising). |
-| 25 | `SYN000240` | 8.0% | 8.3% | +0.27 | HbA1c last observed at 8.0%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), HbA1c_mean (raising). |
-| 26 | `SYN000122` | 6.1% | 6.3% | +0.27 | HbA1c last observed at 6.1%. Top factors: glucose_serum_last (lowering), HbA1c_min (lowering), glucose_serum_min (lowering). |
-| 27 | `SYN000141` | 7.1% | 7.4% | +0.27 | HbA1c last observed at 7.1%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), ev_bucket_3 (lowering). |
-| 28 | `SYN000010` | 7.3% | 7.6% | +0.26 | HbA1c last observed at 7.3%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), ev_bucket_4 (lowering). |
-| 29 | `SYN000063` | 7.3% | 7.6% | +0.26 | HbA1c last observed at 7.3%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), glucose_serum_max (lowering). |
-| 30 | `SYN000398` | 7.3% | 7.5% | +0.25 | HbA1c last observed at 7.3%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), glucose_serum_max (lowering). |
-| 31 | `SYN000041` | 8.6% | 8.8% | +0.23 | HbA1c last observed at 8.6%. Top factors: glucose_serum_last (raising), glucose_serum_max (raising), glucose_serum_mean (raising). |
-| 32 | `SYN000001` | 6.3% | 6.5% | +0.19 | HbA1c last observed at 6.3%. Top factors: glucose_serum_last (lowering), hdl_last (lowering), glucose_serum_mean (raising). |
-| 33 | `SYN000137` | 7.5% | 7.6% | +0.14 | HbA1c last observed at 7.5%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), glucose_serum_max (lowering). |
-| 34 | `SYN000116` | 6.5% | 6.6% | +0.12 | HbA1c last observed at 6.5%. Top factors: glucose_serum_last (lowering), glucose_serum_mean (lowering), triglycerides_last (lowering). |
-| 35 | `SYN000297` | 7.4% | 7.5% | +0.12 | HbA1c last observed at 7.4%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), glucose_serum_max (lowering). |
-| 36 | `SYN000105` | 7.7% | 7.8% | +0.11 | HbA1c last observed at 7.7%. Top factors: glucose_serum_last (raising), triglycerides_last (raising), glucose_serum_mean (raising). |
-| 37 | `SYN000182` | 6.9% | 7.0% | +0.08 | HbA1c last observed at 6.9%. Top factors: glucose_serum_last (lowering), glucose_serum_mean (raising), glucose_serum_min (raising). |
-| 38 | `SYN000303` | 7.2% | 7.3% | +0.07 | HbA1c last observed at 7.2%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), glucose_serum_max (lowering). |
-| 39 | `SYN000420` | 6.3% | 6.3% | +0.04 | HbA1c last observed at 6.3%. Top factors: glucose_serum_last (lowering), glucose_serum_mean (lowering), triglycerides_last (lowering). |
-| 40 | `SYN000129` | 8.5% | 8.4% | -0.02 | HbA1c last observed at 8.5%. Top factors: glucose_serum_last (raising), glucose_serum_max (raising), glucose_serum_mean (raising). |
-| 41 | `SYN000437` | 6.8% | 6.7% | -0.10 | HbA1c last observed at 6.8%. Top factors: glucose_serum_last (lowering), glucose_serum_mean (lowering), hdl_last (raising). |
-| 42 | `SYN000497` | 6.9% | 6.8% | -0.10 | HbA1c last observed at 6.9%. Top factors: glucose_serum_last (lowering), HbA1c_mean (raising), hdl_last (lowering). |
-| 43 | `SYN000102` | 7.5% | 7.4% | -0.12 | HbA1c last observed at 7.5%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), hdl_last (lowering). |
-| 44 | `SYN000015` | 6.7% | 6.6% | -0.13 | HbA1c last observed at 6.7%. Top factors: glucose_serum_last (lowering), hdl_last (raising), HbA1c_min (raising). |
-| 45 | `SYN000275` | 8.3% | 8.1% | -0.13 | HbA1c last observed at 8.3%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), HbA1c_mean (raising). |
-| 46 | `SYN000034` | 7.5% | 7.3% | -0.16 | HbA1c last observed at 7.5%. Top factors: glucose_serum_mean (raising), glucose_serum_last (raising), glucose_serum_max (lowering). |
-| 47 | `SYN000451` | 9.9% | 9.7% | -0.16 | HbA1c last observed at 9.9%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), HbA1c_min (raising). |
-| 48 | `SYN000157` | 9.6% | 9.5% | -0.20 | HbA1c last observed at 9.6%. Top factors: glucose_serum_last (raising), glucose_serum_mean (raising), HbA1c_min (raising). |
-| 49 | `SYN000187` | 6.7% | 6.5% | -0.20 | HbA1c last observed at 6.7%. Top factors: glucose_serum_last (lowering), glucose_serum_mean (raising), hdl_last (raising). |
-| 50 | `SYN000208` | 6.8% | 6.6% | -0.20 | HbA1c last observed at 6.8%. Top factors: glucose_serum_last (lowering), glucose_serum_mean (raising), HbA1c_min (raising). |
+| 1 | `SYN000166` | 6.1% | 7.5% | +1.47 | HbA1c last observed at 6.1%. Top factors: glucose_serum_last (raising), glucose_serum_max (raising), glucose_serum_mean (lowering). |
+| 2 | `SYN000201` | 6.5% | 7.9% | +1.40 | HbA1c last observed at 6.5%. Top factors: glucose_serum_mean (raising), glucose_serum_last (raising), glucose_serum_max (raising). |
+| 3 | `SYN000477` | 7.1% | 8.2% | +1.11 | HbA1c last observed at 7.1%. Top factors: glucose_serum_mean (raising), glucose_serum_last (raising), HbA1c_max (lowering). |
+| 4 | `SYN000109` | 6.2% | 7.3% | +1.10 | HbA1c last observed at 6.2%. Top factors: glucose_serum_mean (lowering), glucose_serum_max (raising), glucose_serum_last (raising). |
+| 5 | `MIMIC10005348` | 6.1% | 7.1% | +0.96 | HbA1c last observed at 6.1%. |
+| 6 | `SYN000462` | 6.7% | 7.5% | +0.86 | HbA1c last observed at 6.7%. |
+| 7 | `SYN000214` | 7.4% | 8.2% | +0.82 | HbA1c last observed at 7.4%. Top factors: glucose_serum_mean (raising), glucose_serum_max (raising), glucose_serum_last (raising). |
+| 8 | `SYN000067` | 6.2% | 7.0% | +0.77 | HbA1c last observed at 6.2%. Top factors: glucose_serum_last (raising), glucose_serum_mean (lowering), glucose_serum_max (raising). |
+| 9 | `SYN000232` | 6.9% | 7.6% | +0.73 | HbA1c last observed at 6.9%. Top factors: glucose_serum_last (raising), glucose_serum_max (raising), glucose_serum_mean (lowering). |
+| 10 | `SYN000005` | 9.3% | 9.9% | +0.66 | HbA1c last observed at 9.3%. |
+| 11 | `SYN000121` | 7.0% | 7.6% | +0.63 | HbA1c last observed at 7.0%. Top factors: glucose_serum_last (raising), glucose_serum_max (raising), glucose_serum_mean (lowering). |
+| 12 | `SYN000350` | 7.9% | 8.5% | +0.62 | HbA1c last observed at 7.9%. Top factors: glucose_serum_mean (raising), glucose_serum_last (raising), glucose_serum_max (raising). |
+| 13 | `SYN000417` | 6.6% | 7.1% | +0.57 | HbA1c last observed at 6.6%. Top factors: glucose_serum_mean (lowering), glucose_serum_max (raising), glucose_serum_last (lowering). |
+| 14 | `SYN000002` | 6.9% | 7.5% | +0.56 | HbA1c last observed at 6.9%. |
+| 15 | `SYN000345` | 6.8% | 7.4% | +0.53 | HbA1c last observed at 6.8%. Top factors: glucose_serum_last (raising), glucose_serum_max (raising), glucose_serum_mean (lowering). |
+| 16 | `SYN000247` | 6.5% | 7.1% | +0.52 | HbA1c last observed at 6.5%. Top factors: glucose_serum_mean (lowering), glucose_serum_max (raising), glucose_serum_min (raising). |
+| 17 | `SYN000087` | 6.9% | 7.4% | +0.51 | HbA1c last observed at 6.9%. |
+| 18 | `SYN000435` | 6.4% | 6.9% | +0.48 | HbA1c last observed at 6.4%. Top factors: glucose_serum_last (lowering), glucose_serum_mean (lowering), glucose_serum_max (raising). |
+| 19 | `SYN000266` | 6.4% | 6.8% | +0.46 | HbA1c last observed at 6.4%. |
+| 20 | `SYN000276` | 6.2% | 6.6% | +0.44 | HbA1c last observed at 6.2%. Top factors: glucose_serum_mean (lowering), HbA1c_max (lowering), glucose_serum_max (lowering). |
+| 21 | `SYN000112` | 7.3% | 7.8% | +0.43 | HbA1c last observed at 7.3%. Top factors: glucose_serum_mean (raising), HbA1c_max (lowering), glucose_serum_last (lowering). |
+| 22 | `SYN000426` | 7.2% | 7.6% | +0.43 | HbA1c last observed at 7.2%. Top factors: glucose_serum_mean (raising), glucose_serum_last (lowering), HbA1c_max (lowering). |
+| 23 | `SYN000233` | 6.8% | 7.2% | +0.39 | HbA1c last observed at 6.8%. Top factors: glucose_serum_mean (lowering), glucose_serum_last (raising), glucose_serum_max (raising). |
+| 24 | `SYN000285` | 6.1% | 6.5% | +0.39 | HbA1c last observed at 6.1%. |
+| 25 | `SYN000041` | 8.6% | 9.0% | +0.38 | HbA1c last observed at 8.6%. Top factors: glucose_serum_mean (raising), glucose_serum_last (raising), glucose_serum_max (raising). |
+| 26 | `SYN000342` | 7.6% | 8.0% | +0.37 | HbA1c last observed at 7.6%. Top factors: glucose_serum_mean (raising), glucose_serum_last (raising), glucose_serum_max (raising). |
+| 27 | `SYN000239` | 6.2% | 6.6% | +0.31 | HbA1c last observed at 6.2%. |
+| 28 | `SYN000491` | 7.3% | 7.5% | +0.25 | HbA1c last observed at 7.3%. Top factors: glucose_serum_last (raising), glucose_serum_max (raising), glucose_serum_min (raising). |
+| 29 | `SYN000453` | 6.2% | 6.5% | +0.23 | HbA1c last observed at 6.2%. Top factors: glucose_serum_mean (lowering), glucose_serum_max (raising), glucose_serum_last (raising). |
+| 30 | `SYN000242` | 6.6% | 6.9% | +0.23 | HbA1c last observed at 6.6%. Top factors: glucose_serum_mean (lowering), glucose_serum_last (raising), glucose_serum_max (raising). |
+| 31 | `SYN000022` | 8.5% | 8.7% | +0.22 | HbA1c last observed at 8.5%. Top factors: glucose_serum_mean (raising), glucose_serum_last (raising), glucose_serum_max (raising). |
+| 32 | `SYN000443` | 6.4% | 6.6% | +0.18 | HbA1c last observed at 6.4%. Top factors: glucose_serum_mean (lowering), glucose_serum_max (raising), hdl_last (lowering). |
+| 33 | `SYN000077` | 6.2% | 6.3% | +0.18 | HbA1c last observed at 6.2%. Top factors: glucose_serum_mean (lowering), glucose_serum_max (lowering), HbA1c_max (lowering). |
+| 34 | `SYN000023` | 8.5% | 8.6% | +0.14 | HbA1c last observed at 8.5%. Top factors: glucose_serum_mean (raising), HbA1c_max (raising), glucose_serum_last (raising). |
+| 35 | `SYN000196` | 6.5% | 6.6% | +0.12 | HbA1c last observed at 6.5%. Top factors: glucose_serum_mean (lowering), glucose_serum_max (raising), HbA1c_max (lowering). |
+| 36 | `SYN000249` | 6.2% | 6.3% | +0.09 | HbA1c last observed at 6.2%. Top factors: glucose_serum_mean (lowering), glucose_serum_last (lowering), ldl_min (raising). |
+| 37 | `SYN000485` | 6.5% | 6.6% | +0.09 | HbA1c last observed at 6.5%. |
+| 38 | `SYN000082` | 6.4% | 6.5% | +0.06 | HbA1c last observed at 6.4%. Top factors: glucose_serum_mean (lowering), glucose_serum_last (lowering), glucose_serum_max (raising). |
+| 39 | `SYN000006` | 8.6% | 8.6% | +0.04 | HbA1c last observed at 8.6%. |
+| 40 | `SYN000418` | 7.4% | 7.4% | +0.01 | HbA1c last observed at 7.4%. Top factors: glucose_serum_last (raising), glucose_serum_max (raising), ev_bucket_0 (lowering). |
+| 41 | `SYN000479` | 7.3% | 7.3% | +0.00 | HbA1c last observed at 7.3%. Top factors: glucose_serum_last (raising), glucose_serum_mean (lowering), glucose_serum_max (raising). |
+| 42 | `SYN000400` | 6.4% | 6.4% | +0.00 | HbA1c last observed at 6.4%. Top factors: glucose_serum_mean (lowering), glucose_serum_max (lowering), HbA1c_max (lowering). |
+| 43 | `SYN000186` | 6.4% | 6.4% | -0.00 | HbA1c last observed at 6.4%. Top factors: glucose_serum_mean (lowering), glucose_serum_last (lowering), glucose_serum_max (raising). |
+| 44 | `SYN000384` | 6.1% | 6.1% | -0.03 | HbA1c last observed at 6.1%. |
+| 45 | `SYN000284` | 7.6% | 7.6% | -0.03 | HbA1c last observed at 7.6%. Top factors: glucose_serum_mean (raising), glucose_serum_last (lowering), HbA1c_max (lowering). |
+| 46 | `SYN000213` | 9.3% | 9.2% | -0.06 | HbA1c last observed at 9.3%. |
+| 47 | `SYN000303` | 7.2% | 7.1% | -0.09 | HbA1c last observed at 7.2%. Top factors: glucose_serum_mean (lowering), glucose_serum_max (raising), glucose_serum_last (raising). |
+| 48 | `SYN000172` | 6.5% | 6.4% | -0.09 | HbA1c last observed at 6.5%. Top factors: glucose_serum_mean (lowering), glucose_serum_max (raising), glucose_serum_last (lowering). |
+| 49 | `SYN000179` | 9.0% | 8.9% | -0.10 | HbA1c last observed at 9.0%. Top factors: glucose_serum_mean (raising), glucose_serum_last (raising), HbA1c_max (raising). |
+| 50 | `SYN000471` | 7.2% | 7.1% | -0.10 | HbA1c last observed at 7.2%. Top factors: glucose_serum_mean (lowering), glucose_serum_max (raising), glucose_serum_last (lowering). |
 
 ![cohort distribution](figures/cohort_distribution.png)

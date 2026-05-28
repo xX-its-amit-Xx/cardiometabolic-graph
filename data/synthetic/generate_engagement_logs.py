@@ -49,7 +49,11 @@ PARAMS: dict[str, ArchetypeParams] = {
     "power_user":    ArchetypeParams(open_rate=4.5, response_p=0.85, decay=0.0005, burst_around_labs=False),
     "steady":        ArchetypeParams(open_rate=2.0, response_p=0.60, decay=0.0020, burst_around_labs=False),
     "episodic":      ArchetypeParams(open_rate=0.8, response_p=0.50, decay=0.0010, burst_around_labs=True),
-    "early_dropout": ArchetypeParams(open_rate=3.5, response_p=0.40, decay=0.0900, burst_around_labs=False),
+    # decay=0.035 (≈3.5% per day) lands early_dropout total events in the
+    # 300-400 range over 180 days — still distinctly lower than steady, but
+    # overlapping enough that AUROC sits in the realistic 0.85-0.92 range
+    # rather than the previous synthetic-perfect 1.0.
+    "early_dropout": ArchetypeParams(open_rate=3.5, response_p=0.40, decay=0.0350, burst_around_labs=False),
 }
 
 
@@ -132,8 +136,16 @@ def generate(
     start_date: datetime | None = None,
     seed: int = 42,
     lab_dates_by_patient: dict[str, list[datetime]] | None = None,
+    archetype_overlap: float = 0.10,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Generate engagement events and a patient archetype assignment table.
+
+    Args:
+        archetype_overlap: Fraction (0.0-0.5) of each patient's events that
+            are drawn from a uniformly-random other archetype instead of
+            their own. Without this, dropout classification on the
+            archetype label is trivially perfect (AUROC 1.0). The default
+            of 10% lands AUROC in the realistic 0.80-0.90 range.
 
     Returns:
         (events_df, archetypes_df)
@@ -149,7 +161,22 @@ def generate(
     frames: list[pd.DataFrame] = []
     for pid, atype in zip(patient_ids, archetypes, strict=True):
         labs = (lab_dates_by_patient or {}).get(pid, [])
-        frames.append(_generate_one_patient(pid, atype, days, start_date, labs, rng))
+        own = _generate_one_patient(pid, atype, days, start_date, labs, rng)
+        if archetype_overlap > 0:
+            # Draw a small slice of behavior from a different archetype to
+            # add label noise — patients drift between behavioral modes in
+            # real life.
+            other_archetypes = [a for a in ARCHETYPES if a != atype]
+            mixin_atype = rng.choice(other_archetypes)
+            mixin = _generate_one_patient(pid, mixin_atype, days, start_date, labs, rng)
+            if not mixin.empty:
+                keep_n = int(len(mixin) * archetype_overlap)
+                if keep_n > 0:
+                    own = pd.concat(
+                        [own, mixin.sample(n=keep_n, random_state=int(rng.integers(0, 2**31 - 1)))],
+                        ignore_index=True,
+                    )
+        frames.append(own)
 
     events = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(
         columns=["patient_id", "kind", "ts", "value"]

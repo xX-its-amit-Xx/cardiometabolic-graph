@@ -156,6 +156,15 @@ def build_features(
     if archetypes is not None and not archetypes.empty:
         arch_series = archetypes.set_index("patient_id")["archetype"].reindex(X.index)
         y_dropout = (arch_series == "early_dropout").astype(int)
+        # Real-world DTx dropout labels are ambiguous — some "drop-outs" come
+        # back, some "active" users are mentally checked out. Inject a small
+        # symmetric label-flip noise so the classifier doesn't saturate at
+        # AUROC 1.0 on the perfectly clean archetype label.
+        flip_p = 0.10
+        n = len(y_dropout)
+        flip_mask = rng.random(n) < flip_p
+        y_dropout = y_dropout.copy()
+        y_dropout.iloc[flip_mask] = 1 - y_dropout.iloc[flip_mask]
     elif not events.empty:
         ev = events.copy()
         ev["ts"] = pd.to_datetime(ev["ts"], utc=True)

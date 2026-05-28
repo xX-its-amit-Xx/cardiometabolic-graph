@@ -4,28 +4,28 @@
 
 | Model | Pearson r | MAE (HbA1c %) | n_train | n_test |
 |-------|-----------|---------------|---------|--------|
-| LightGBM | 0.968 | 0.275 | 400 | 100 |
+| LightGBM | 0.875 | 0.384 | 480 | 120 |
 
 ## Engagement dropout (binary classification)
 
 | Model | AUROC | AUPRC | n_train | n_test | pos rate (test) |
 |-------|-------|-------|---------|--------|-----------------|
-| LightGBM | 1.000 | 1.000 | 400 | 100 | 18.00% |
+| LightGBM | 0.820 | 0.741 | 480 | 120 | 16.67% |
 
 ## Top features (GBM HbA1c)
 
-- `glucose_serum_last` — 454
-- `triglycerides_last` — 287
-- `cholesterol_total_mean` — 263
-- `ldl_min` — 252
-- `hdl_last` — 233
-- `triglycerides_min` — 204
-- `triglycerides_max` — 203
-- `hdl_mean` — 191
-- `cholesterol_total_max` — 186
-- `hdl_min` — 181
-- `HbA1c_min` — 172
-- `cholesterol_total_min` — 172
-- `glucose_serum_min` — 172
-- `ldl_max` — 172
-- `glucose_serum_mean` — 168
+- `glucose_serum_last` — 265
+- `glucose_serum_mean` — 157
+- `glucose_serum_max` — 88
+- `triglycerides_last` — 75
+- `glucose_serum_min` — 62
+- `triglycerides_max` — 61
+- `hdl_last` — 50
+- `triglycerides_min` — 46
+- `HbA1c_max` — 45
+- `HbA1c_last` — 43
+- `birth_year` — 40
+- `HbA1c_min` — 38
+- `cholesterol_total_last` — 36
+- `triglycerides_mean` — 34
+- `hdl_min` — 34

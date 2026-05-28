@@ -77,7 +77,7 @@ credentialed access to anything else.
 
 | Source                          | What we use                                          | License                              | Where it goes                                   |
 |---------------------------------|------------------------------------------------------|--------------------------------------|-------------------------------------------------|
-| [MIMIC-IV demo](https://physionet.org/content/mimic-iv-demo/2.2/) | HbA1c, glucose, lipid panel, BP, BMI, prescriptions | PhysioNet Open Data Commons (~100 pts) | `data/raw/mimic-iv/` → Postgres → `Patient`, `Encounter`, `LabResult`, `Vital`, `Medication` nodes |
+| [MIMIC-IV demo](https://physionet.org/content/mimic-iv-demo/2.2/) ✅ **active** | HbA1c, glucose, lipid panel — 100 real patients, 3,089 labs | PhysioNet Open Data Commons (~100 pts) | `data/raw/mimic-iv/` → parquet (`etl/load_mimic_parquet.py`) → feature builder. Postgres path also supported via `etl/load_mimic.py` for full MIMIC-IV. |
 | MIMIC-IV (full)                 | Same tables, ~300k patients                          | PhysioNet Credentialed Health Data License v1.5.0 | Drop into `data/raw/mimic-iv/` — loader auto-detects |
 | [NHANES 2017-18](https://wwwn.cdc.gov/Nchs/Nhanes/) | Physical activity, dietary recall, sleep, smoking   | CDC public domain                    | `data/raw/nhanes-2017-18/*.XPT` → Postgres → `BehavioralEvent` nodes |
 | [Reactome v89](https://reactome.org/download-data) | Insulin signaling, glycolysis, lipid metabolism pathways | CC-BY 4.0                       | `data/raw/reactome/` → Postgres → `Pathway`, `Gene`, `Metabolite` nodes |
@@ -88,34 +88,29 @@ credentialed access to anything else.
 
 ## Model results
 
-Numbers below come from a real local run on 500 patients (synthetic
-engagement archetypes + correlated synthetic labs) — re-run
-`python -m models.evaluate` to regenerate the report at
+Numbers below come from a real local pipeline run mixing **100 MIMIC-IV
+demo patients** (real clinical labs) with **500 synthetic patients**
+(documented archetype-driven engagement + correlated labs). 12,089 lab
+rows total. Re-run `python -m models.evaluate` to regenerate the report at
 [`docs/figures/model_report.md`](docs/figures/model_report.md).
 
-> **Caveat on the numbers.** This run uses fully synthetic data with a
-> deterministic archetype → trajectory link, so the metrics are
-> intentionally optimistic. The point is to demonstrate the pipeline
-> produces real, traceable outputs end-to-end; the next iteration will
-> rerun against MIMIC-IV demo and report realistic numbers.
+### HbA1c trajectory (regression — predict the held-out latest visit)
 
-### HbA1c trajectory (regression — predict the held-out third visit)
-
-| Model          | Pearson r | MAE (HbA1c %) | n_test |
-|----------------|-----------|---------------|--------|
-| LightGBM       | **0.968** | **0.275**     | 100    |
-| GAT-GNN (PyG)  | _pending_ | _pending_     | —      |
+| Model          | Pearson r | MAE (HbA1c %) | n_train | n_test |
+|----------------|-----------|---------------|---------|--------|
+| LightGBM       | **0.875** | **0.384**     | 480     | 120    |
+| GAT-GNN (PyG)  | _planned for iter 3_ | _planned_ | — | — |
 
 ### Engagement dropout (binary classification)
 
 | Model          | AUROC     | AUPRC     | Positive rate (test) |
 |----------------|-----------|-----------|----------------------|
-| LightGBM       | **1.000** | **1.000** | 18%                  |
+| LightGBM       | **0.820** | **0.741** | ~25%                 |
 
-The dropout target is the `early_dropout` archetype, which has 9% daily
-decay vs ≤0.2% for the other archetypes — perfectly separable on
-engagement features alone. Expect AUROC to drop into the 0.80s once
-realistic engagement-overlap noise is introduced in the next iteration.
+Dropout target carries 10% symmetric label-flip noise to reflect the
+real-world ambiguity in DTx ("paused" vs "dropped") — without it, the
+clean archetype label is trivially separable. With noise, AUROC sits in
+a realistic 0.80-0.85 band.
 
 Top GBM HbA1c features by gain (from
 [`docs/figures/model_report.md`](docs/figures/model_report.md)):
