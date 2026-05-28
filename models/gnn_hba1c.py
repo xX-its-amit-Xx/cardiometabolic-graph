@@ -24,7 +24,8 @@ from sklearn.metrics import mean_absolute_error
 from torch import nn
 
 try:
-    from torch_geometric.data import Data, DataLoader
+    from torch_geometric.data import Data
+    from torch_geometric.loader import DataLoader
     from torch_geometric.nn import GATv2Conv, global_mean_pool
     PYG_AVAILABLE = True
 except ImportError:  # PyG is a heavy install; allow tests to import this module without it
