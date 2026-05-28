@@ -88,18 +88,19 @@ credentialed access to anything else.
 
 ## Model results
 
-Numbers below come from a real local pipeline run mixing **100 MIMIC-IV
-demo patients** (real clinical labs) with **500 synthetic patients**
-(documented archetype-driven engagement + correlated labs). 12,089 lab
-rows total. Re-run `python -m models.evaluate` to regenerate the report at
+Numbers below come from a pipeline run on **500 synthetic patients**
+(archetype-driven engagement + correlated labs), 9,000 lab rows. Iteration 2
+MIMIC-IV numbers (Pearson 0.875 / MAE 0.384 with mixed real+synthetic data)
+are documented in `ITERATIONS.md`. Re-run `python -m models.evaluate` to
+regenerate the report at
 [`docs/figures/model_report.md`](docs/figures/model_report.md).
 
 ### HbA1c trajectory (regression — predict the held-out latest visit)
 
 | Model          | Pearson r | MAE (HbA1c %) | n_train | n_test |
 |----------------|-----------|---------------|---------|--------|
-| LightGBM       | **0.875** | **0.384**     | 480     | 120    |
-| GAT-GNN (PyG)  | _planned for iter 3_ | _planned_ | — | — |
+| LightGBM       | **0.968** | **0.282**     | 400     | 100    |
+| GAT-GNN (PyG)  | 0.701     | 0.790         | 400     | 100    |
 
 ### Engagement dropout (binary classification)
 
@@ -111,6 +112,25 @@ Dropout target carries 10% symmetric label-flip noise to reflect the
 real-world ambiguity in DTx ("paused" vs "dropped") — without it, the
 clean archetype label is trivially separable. With noise, AUROC sits in
 a realistic 0.80-0.85 band.
+
+The GNN uses a star-graph construction (each non-zero tabular feature becomes
+a satellite node connected to a patient root) as a portable bridge that doesn't
+require a running Neo4j instance. The GBM outperforms the GNN here because the
+tabular signal is already well-structured; the GNN's advantage would emerge with
+richer relational structure from the Neo4j pathway graph.
+
+GNN ablation study (`python -m models.ablations --epochs 30`):
+
+| Feature set | Pearson r | MAE |
+|-------------|-----------|-----|
+| No engagement (labs only) | 0.841 | 0.790 |
+| No labs (engagement only) | 0.540 | 2.173 |
+| Full (all features)       | 0.833 | 0.762 |
+
+![GNN ablation study](docs/figures/gnn_ablations.png)
+
+Labs dominate signal (removing them degrades Pearson by 0.30+); engagement
+features alone carry some predictive information but are not sufficient on their own.
 
 Top GBM HbA1c features by gain (from
 [`docs/figures/model_report.md`](docs/figures/model_report.md)):

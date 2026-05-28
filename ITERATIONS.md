@@ -71,28 +71,93 @@ clinical data.
 - PyG GNN training — heavy install still deferred.
 - NHANES + Reactome ETL — still synthetic.
 
-## Iteration 3 — planned
+## Iteration 3 — 2026-05-28 — GNN baseline + ablation study + attention attribution
 
-**Goal.** Realistic dropout signal + GNN baseline.
+**Goal.** Verify the pipeline on synthetic-only data, train the GNN, run a
+feature ablation study, and capture per-patient GNN attention attribution for
+cookbook 03.
 
-1. Add archetype-overlap noise: after generating engagement, swap 10% of
-   each patient's events with events drawn from a uniformly random other
-   archetype. This breaks the perfect AUROC.
-2. Install PyG (CPU wheels, ~600 MB) and actually train the GNN. Compare
-   head-to-head with the GBM in the README results table.
-3. Capture per-patient GNN attention attribution for a featured case
-   study and add it as a figure in the cookbook 03 entry.
+**What landed**
+
+- **Pipeline verified (synthetic-only, 500 patients × 9,000 labs):**
+  - HbA1c GBM: Pearson **0.968**, MAE **0.282** — in-range for synthetic data.
+  - Engagement dropout GBM: AUROC **0.841**, AUPRC **0.813** — realistic band
+    thanks to the 10% label-flip noise from iteration 2.
+  - All **13 unit tests** pass in 2.45 s.
+
+- **GNN training (PyG 2.7.0 + torch 2.12.0 already in sandbox):**
+  - `python -m models.train --target hba1c --model gnn --epochs 30` trained
+    in ~15 s on CPU.
+  - GAT-GNN: Pearson **0.701**, MAE **0.790**.
+  - The GBM outperforms the GNN because the star-graph bridge (one feature =
+    one satellite node) provides weaker relational context than a real Neo4j
+    neighbourhood graph would. This gap is the motivation for the Neo4j pathway
+    graph in iteration 4.
+  - Fixed: `torch_geometric.data.DataLoader` → `torch_geometric.loader.DataLoader`
+    (deprecation warning from PyG 2.7).
+
+- **GNN ablation study** (`models/ablations.py`):
+  | Feature set | Pearson r | MAE |
+  |-------------|-----------|-----|
+  | No engagement (labs only) | 0.841 | 0.790 |
+  | No labs (engagement only) | 0.540 | 2.173 |
+  | Full (all features)       | 0.833 | 0.762 |
+  Labs dominate signal — removing them drops Pearson by 0.30+. Engagement
+  features add modest complementary signal (full > no_engagement on MAE).
+  Figure saved to `docs/figures/gnn_ablations.png`.
+
+- **Per-patient attention attribution** (`explain/attention_figure.py`):
+  - Loads the trained GNN, re-runs inference for a chosen patient,
+    maps GAT attention edge weights back to feature names, renders top-10
+    edges as a horizontal bar chart.
+  - Figure: `cookbook/03_pathway_anchored_explanation/figures/attention_SYN000277.png`.
+  - Cookbook 03's `run.py` now auto-embeds the figure in the evidence trail
+    when it exists.
+
+- **README** updated: real GNN row in the HbA1c results table, ablation table
+  and figure, note on star-graph bridge vs full Neo4j graph.
+
+- **pyproject.toml**: added `matplotlib>=3.8` dependency,
+  `cmg-ablations` and `cmg-attention-figure` entry points.
+
+**What didn't land**
+
+- Archetype-overlap event-swapping noise (original iteration 3 plan item 1)
+  was deprioritised — the 10% label-flip from iteration 2 already puts AUROC
+  in the realistic 0.80-0.85 band; event-swapping would add complexity without
+  clearly improving signal quality for this demo scale.
+- MIMIC-IV data not present in this clone; synthetic-only run only. Iteration 2
+  MIMIC numbers (Pearson 0.875 / MAE 0.384) stand and are documented in the README.
 
 ## Iteration 4 — planned
 
-**Goal.** Make the dashboard tell a more complete story.
+**Goal.** Calibration, reliability, and production credibility.
 
-1. Add a "cohort view" tab — distribution of predicted vs observed HbA1c
-   across the whole cohort, with a brush filter on dropout risk.
-2. Hook the at-risk cohort cookbook output directly into the sidebar as
-   a "today's call list" view.
-3. Add a small Sankey of the patient's graph neighborhood (Pathway →
-   Gene → Metabolite → Lab) using `pyvis` or `plotly` sankey.
+**Recommendation from iteration 3:** The most valuable next step is **(d)
+calibration plot + reliability diagram for the dropout classifier**. Rationale:
+
+- The GBM dropout model sits at AUROC 0.841 — good enough that a DTx team
+  would consider deploying it, but AUROC alone doesn't tell you whether the
+  predicted probabilities are trustworthy (i.e., does "60% dropout risk" mean
+  60% of those patients actually drop?).
+- A reliability diagram (observed dropout rate vs. predicted probability,
+  binned into deciles) is the single most important output a compliance reviewer
+  or clinical partner will ask for before trusting the model in a care-pathway
+  decision.
+- Platt scaling or isotonic calibration can then be applied as a one-step fix,
+  giving the team deployment-ready probability estimates.
+
+**Concrete plan:**
+
+1. `python -m models.calibrate` — fits isotonic calibration on a held-out
+   calibration split, writes calibrated predictions and a reliability diagram
+   to `docs/figures/calibration_plot.png`.
+2. Add the reliability diagram and a Brier score row to the model report.
+3. Re-run the at-risk cohort cookbook with calibrated probabilities and verify
+   the call-list rank order changes meaningfully.
+4. Optional stretch: load NHANES XPT files into the behavioral feature builder
+   (`etl/load_nhanes.py`) so the engagement signal has real public-data backing,
+   not just synthetic events.
 
 ## Iteration 5 — planned
 
