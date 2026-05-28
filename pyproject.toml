@@ -47,6 +47,7 @@ dependencies = [
     "python-dotenv>=1.0",
     "requests>=2.32",
     "tqdm>=4.66",
+    "matplotlib>=3.8",
 ]
 
 [project.optional-dependencies]
@@ -74,6 +75,8 @@ cmg-build-graph = "etl.build_graph:main"
 cmg-train = "models.train:main"
 cmg-evaluate = "models.evaluate:main"
 cmg-synth-engagement = "data.synthetic.generate_engagement_logs:main"
+cmg-ablations = "models.ablations:main"
+cmg-attention-figure = "explain.attention_figure:main"
 
 [tool.setuptools]
 packages = [
