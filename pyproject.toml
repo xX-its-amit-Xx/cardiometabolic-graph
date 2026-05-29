@@ -76,6 +76,7 @@ Homepage = "https://github.com/amitshenoy/cardiometabolic-graph"
 Issues = "https://github.com/amitshenoy/cardiometabolic-graph/issues"
 
 [project.scripts]
+cmg = "cmg.cli:main"
 cmg-load-mimic = "etl.load_mimic:main"
 cmg-load-mimic-parquet = "etl.load_mimic_parquet:main"
 cmg-load-nhanes = "etl.load_nhanes:main"
@@ -100,6 +101,7 @@ packages = [
     "cookbook",
     "summarizer",
     "evaluation",
+    "cmg",
 ]
 
 [tool.setuptools.package-data]

@@ -41,13 +41,35 @@ Full definition with property lists and lineage notes:
 
 ## Quick start
 
-### Option A — Docker stack (full graph + Jupyter)
+### 30-second path (one command from a fresh clone)
 
 ```bash
 git clone https://github.com/xX-its-amit-Xx/cardiometabolic-graph.git
 cd cardiometabolic-graph
-cp .env.example .env
+pip install -e .
+cmg quickstart        # auto-fetches MIMIC demo + trains + evaluates
+cmg dashboard         # http://localhost:8501
+```
 
+`cmg quickstart` runs `cmg doctor`, downloads the freely-available
+MIMIC-IV demo (~16 MB, no PhysioNet credentials needed), generates
+synthetic engagement + labs, trains every model, runs SHAP, generates
+the evaluation scoreboard, and tells you what's next. Takes ~3 minutes
+on a laptop.
+
+Other useful single commands:
+
+```bash
+cmg doctor               # diagnose env, deps, data files, MIMIC presence
+cmg pipeline             # rerun synth + ETL + train + evaluate
+cmg cookbook 01          # run one of the eight worked examples
+cmg cookbook 05 -- --patient SYN000001 --drug "semaglutide 1mg weekly"
+cmg evaluate             # regenerate docs/EVALUATION.md + figures
+```
+
+### Full Docker stack (Postgres + Neo4j + Jupyter)
+
+```bash
 docker compose up -d        # Postgres + Neo4j + Jupyter
 make install
 make pipeline               # synth -> Postgres ETL -> Neo4j graph -> train -> evaluate
@@ -60,31 +82,6 @@ make dashboard              # http://localhost:8501
 | Postgres  | `postgresql://localhost:5432`| `cmg` / `cmg-demo-pass`      |
 | Jupyter   | http://localhost:8888        | token: `cmg`                 |
 | Dashboard | http://localhost:8501        | n/a                          |
-
-### Option B — Docker-free (laptop, sandbox, CI)
-
-Use when you can't run Docker (corporate VM, locked-down sandbox, CI runner).
-Skips Postgres + Neo4j; the parquet path writes everything to
-`data/processed/` and the dashboard reads from there directly.
-
-```bash
-git clone https://github.com/xX-its-amit-Xx/cardiometabolic-graph.git
-cd cardiometabolic-graph
-
-python -m venv .venv && . .venv/bin/activate    # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
-
-# Optional: drop MIMIC-IV demo into data/raw/mimic-iv/
-# curl -sSL https://physionet.org/static/published-projects/mimic-iv-demo/mimic-iv-demo-2.2.zip \
-#   -o data/raw/mimic.zip && unzip -q data/raw/mimic.zip -d data/raw/ && \
-#   mv data/raw/mimic-iv-clinical-database-demo-2.2 data/raw/mimic-iv
-
-make pipeline-parquet       # synth -> parquet ETL -> train -> evaluate
-make dashboard
-```
-
-The parquet path is what produced the screenshot and the committed
-cookbook outputs in this repo.
 
 ---
 
