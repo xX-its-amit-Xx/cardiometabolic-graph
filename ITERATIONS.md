@@ -129,7 +129,77 @@ cookbook 03.
 - MIMIC-IV data not present in this clone; synthetic-only run only. Iteration 2
   MIMIC numbers (Pearson 0.875 / MAE 0.384) stand and are documented in the README.
 
-## Iteration 4 — planned
+## Iteration 4 — 2026-05-29 — Hard pass + open-weight LLM + four new use cases
+
+**Goal.** Address a fair pushback ("you can't use Sonnet without an API key")
+by making LLM independence explicit + first-class, do a hard quality pass to
+fix every issue a reviewer would catch, and add four cookbook examples
+that map to real health-tech workflows the previous four didn't cover.
+
+**What landed**
+
+- **Hard-pass audit fixes** (every issue from the audit, file-by-file):
+  - `models/_features.py` — label-flip noise RNG now seeded from the
+    `seed` argument instead of a hardcoded `0`. Two runs with different
+    `--seed` now produce different (reproducibly different) dropout
+    targets, as documented.
+  - `models/_features.py` — empty engagement events now logs a warning
+    so silent data-ingestion failures surface during training.
+  - `Makefile` — added `etl-parquet`, `train-gnn`, and
+    `pipeline-parquet` targets; help text updated; existing Docker-only
+    `pipeline` target no longer the only end-to-end option.
+  - `README.md` — quickstart now has both Option A (Docker stack) and
+    Option B (Docker-free / parquet path) sections so readers without
+    Docker aren't stranded; the data-sources table no longer claims
+    BP/BMI/prescriptions that the loader doesn't actually extract.
+
+- **Open-weight summarizer (`summarizer/` package):** three backends —
+  `deterministic` (existing template), `ollama` (local Ollama server),
+  `transformers` (in-process HuggingFace causal LM, default
+  `microsoft/Phi-3-mini-4k-instruct`). Selected via `CMG_SUMMARIZER` env
+  var or the new sidebar radio in the dashboard. Audience-specific
+  prompts (`clinician` / `patient` / `care_coordinator` / `prior_auth`)
+  share a single `PatientFacts` payload so the audit trail is identical
+  regardless of backend. Both LLM backends gracefully degrade to the
+  deterministic template when their service / dependency is unavailable.
+  No proprietary API key required anywhere.
+
+- **Six new contract tests** in `tests/test_summarizer.py`. Total fast
+  suite now **19 passing** (was 13).
+
+- **Four new cookbook examples** (each tested end-to-end on the current
+  500-patient + MIMIC-100 frame):
+  - `05_prior_auth_note` — structured PA note generator with metric
+    table + attestation block; calls the summarizer at the `prior_auth`
+    audience.
+  - `06_pre_visit_summary` — morning-prep worklist for a physician's
+    daily schedule; rule-based "questions to ask" derived from each
+    patient's risk signals.
+  - `07_trial_eligibility` — configurable JSON trial-spec screening
+    that ranks patients by criteria met and engagement; default spec
+    inspired by SUSTAIN-6.
+  - `08_pharmacist_intervention` — leverage-score-based weekly call
+    list with phone-script bullets; includes a real bug-fix where we
+    pull `last_hba1c` from the labs frame rather than the features
+    frame (which intentionally holds out the target).
+
+- **Dashboard** — `dashboard/app.py` now has sidebar radio for summary
+  backend + audience selector; KPIs and trajectory chart unchanged.
+  Screenshot recaptured against MIMIC10002930 with the new sidebar
+  visible.
+
+- **README** — added "Summary backends — no proprietary LLM required"
+  section with a backend comparison table; cookbook index expanded
+  with the four new entries and a "who uses it" column.
+
+**What didn't land**
+
+- Calibration plot / reliability diagram for the dropout classifier
+  (carried forward to iteration 5).
+- NHANES + Reactome real-data ingest (still synthetic-only in the
+  Docker-free path).
+
+## Iteration 5 — planned
 
 **Goal.** Calibration, reliability, and production credibility.
 
@@ -159,7 +229,7 @@ calibration plot + reliability diagram for the dropout classifier**. Rationale:
    (`etl/load_nhanes.py`) so the engagement signal has real public-data backing,
    not just synthetic events.
 
-## Iteration 5 — planned
+## Iteration 6 — planned
 
 **Goal.** Production credibility — the things a health-tech CTO would ask
 about before adoption.
