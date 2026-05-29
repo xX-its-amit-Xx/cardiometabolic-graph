@@ -18,6 +18,7 @@ help:
 	@echo "  train              Train LightGBM models"
 	@echo "  train-gnn          Train PyG GNN (needs torch + torch_geometric)"
 	@echo "  evaluate           Aggregate trained-model results into docs/figures/"
+	@echo "  evaluate-use-cases Field-standard metrics for every cookbook -> docs/EVALUATION.md"
 	@echo "  dashboard          Launch Streamlit dashboard"
 	@echo "  pipeline           Docker path: synth -> etl -> train -> evaluate"
 	@echo "  pipeline-parquet   Docker-free path: synth -> etl-parquet -> train -> evaluate"
@@ -74,6 +75,12 @@ train-gnn:
 
 evaluate:
 	$(PYTHON) -m models.evaluate --report docs/figures/model_report.md
+
+# Field-standard clinical-ML metrics for every cookbook example.
+# Writes docs/EVALUATION.md + the figures under docs/figures/evaluation/.
+evaluate-use-cases:
+	$(PYTHON) -m models.delta_regressor
+	$(PYTHON) scripts/evaluate_all_use_cases.py
 
 dashboard:
 	streamlit run dashboard/app.py
