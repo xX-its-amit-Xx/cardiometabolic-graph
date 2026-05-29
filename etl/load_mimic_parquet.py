@@ -53,14 +53,22 @@ def _load_patients(mimic_dir: Path) -> pd.DataFrame:
     p = mimic_dir / "hosp" / "patients.csv.gz"
     df = _read_gz(p)
     df.columns = [c.lower() for c in df.columns]
+    # MIMIC-IV date-shifts every patient by a random per-subject offset
+    # for privacy, so the anchor_year column lives in the future
+    # (2030-2150). anchor_age is the patient's REAL age at the anchor
+    # year. We store age_years directly so downstream consumers don't
+    # have to know about date shifting; birth_year is filled with
+    # 2026 - age_years so it stays internally consistent for the
+    # current data year.
     df = df.assign(
         patient_id="MIMIC" + df["subject_id"].astype(str),
         sex=df["gender"],
-        birth_year=df["anchor_year"] - df["anchor_age"],
+        age_years=df["anchor_age"].astype("Int64"),
+        birth_year=2026 - df["anchor_age"].astype(int),
         cohort="mimic-iv-demo",
         source_system="mimic-iv-demo",
     )
-    return df[["patient_id", "sex", "birth_year", "cohort", "source_system"]].copy()
+    return df[["patient_id", "sex", "age_years", "birth_year", "cohort", "source_system"]].copy()
 
 
 def _load_admissions(mimic_dir: Path) -> pd.DataFrame:

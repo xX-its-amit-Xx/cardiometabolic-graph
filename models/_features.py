@@ -146,6 +146,13 @@ def build_features(
             axis=1,
         )
 
+    # Derive a usable age feature. birth_year alone is a leaky proxy
+    # when MIMIC's date-shifted anchor_year mixes with synthetic
+    # patients on a real calendar year. age_years computed against a
+    # fixed "current year" makes the feature comparable across cohorts.
+    if "birth_year" in X.columns:
+        X["age_years"] = (2026 - X["birth_year"]).clip(lower=0, upper=120).astype(float)
+
     rng = np.random.default_rng(seed)
     if not last_hba1c_target.empty:
         y_hba1c = last_hba1c_target.reindex(X.index)

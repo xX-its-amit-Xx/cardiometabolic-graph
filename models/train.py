@@ -48,6 +48,20 @@ def _load_inputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFra
             "sex": "U",
             "birth_year": 1980,
         })
+    elif not patients.empty and not events.empty:
+        # MIMIC loader populates patients.parquet with the 100 demo
+        # patients. The 500 synthetic patients only appear in the
+        # engagement events / archetypes — without this merge they'd
+        # land in the feature frame with birth_year = NaN -> 0, which
+        # made age-based filters trip in unexpected ways downstream.
+        missing = set(events["patient_id"].unique()) - set(patients["patient_id"])
+        if missing:
+            synth_patients = pd.DataFrame({
+                "patient_id": list(missing),
+                "sex": "U",
+                "birth_year": 1980,
+            })
+            patients = pd.concat([patients, synth_patients], ignore_index=True)
 
     return labs, events, patients, archetypes
 
