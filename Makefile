@@ -1,23 +1,27 @@
-.PHONY: help install lint format test pipeline synth etl train evaluate dashboard up down clean
+.PHONY: help install lint format test test-all up down synth etl etl-parquet \
+        train train-gnn evaluate dashboard pipeline pipeline-parquet clean
 
 PYTHON ?= python
 
 help:
 	@echo "Targets:"
-	@echo "  install      Install package with dev extras"
-	@echo "  lint         Run ruff + black --check"
-	@echo "  format       Run ruff --fix + black"
-	@echo "  test         Run pytest (excluding slow/integration)"
-	@echo "  test-all     Run full pytest suite"
-	@echo "  up           docker compose up the stack"
-	@echo "  down         docker compose down"
-	@echo "  synth        Generate synthetic engagement logs"
-	@echo "  etl          Run all ETL loaders + build graph"
-	@echo "  train        Train all models"
-	@echo "  evaluate     Evaluate trained models"
-	@echo "  dashboard    Launch Streamlit dashboard"
-	@echo "  pipeline     End-to-end: synth -> etl -> train -> evaluate"
-	@echo "  clean        Remove caches and build artefacts"
+	@echo "  install            Install package with dev extras"
+	@echo "  lint               Run ruff + black --check"
+	@echo "  format             Run ruff --fix + black"
+	@echo "  test               Run pytest (excluding slow/integration)"
+	@echo "  test-all           Run full pytest suite"
+	@echo "  up                 docker compose up the stack (Postgres + Neo4j + Jupyter)"
+	@echo "  down               docker compose down"
+	@echo "  synth              Generate synthetic engagement logs + labs"
+	@echo "  etl                Postgres-backed ETL + Neo4j graph build (needs make up)"
+	@echo "  etl-parquet        Docker-free ETL: MIMIC demo -> parquet (no DB needed)"
+	@echo "  train              Train LightGBM models"
+	@echo "  train-gnn          Train PyG GNN (needs torch + torch_geometric)"
+	@echo "  evaluate           Aggregate trained-model results into docs/figures/"
+	@echo "  dashboard          Launch Streamlit dashboard"
+	@echo "  pipeline           Docker path: synth -> etl -> train -> evaluate"
+	@echo "  pipeline-parquet   Docker-free path: synth -> etl-parquet -> train -> evaluate"
+	@echo "  clean              Remove caches and build artefacts"
 
 install:
 	$(PYTHON) -m pip install -e ".[dev]"
@@ -55,10 +59,18 @@ etl:
 	$(PYTHON) -m etl.load_pathways
 	$(PYTHON) -m etl.build_graph
 
+# Docker-free ETL path: parquet-only, no Postgres, no Neo4j required.
+# Use this when you only have the MIMIC-IV demo and don't want to bring up
+# the full data services. See README's "Docker-free quick-start" section.
+etl-parquet:
+	$(PYTHON) -m etl.load_mimic_parquet --merge-synthetic-labs
+
 train:
-	$(PYTHON) -m models.train --target hba1c --model gnn
 	$(PYTHON) -m models.train --target hba1c --model gbm
 	$(PYTHON) -m models.train --target engagement_dropout --model gbm
+
+train-gnn:
+	$(PYTHON) -m models.train --target hba1c --model gnn
 
 evaluate:
 	$(PYTHON) -m models.evaluate --report docs/figures/model_report.md
@@ -66,7 +78,11 @@ evaluate:
 dashboard:
 	streamlit run dashboard/app.py
 
+# Full pipeline assumes the Docker stack is up (`make up`). For the
+# Docker-free path use `make pipeline-parquet` instead.
 pipeline: synth etl train evaluate
+
+pipeline-parquet: synth etl-parquet train evaluate
 
 clean:
 	rm -rf .pytest_cache .ruff_cache .mypy_cache build dist *.egg-info

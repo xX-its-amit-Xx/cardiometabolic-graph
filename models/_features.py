@@ -61,6 +61,11 @@ def _build_lab_aggregates(labs: pd.DataFrame) -> pd.DataFrame:
 def _build_engagement_features(events: pd.DataFrame, horizon_days: int = 30) -> pd.DataFrame:
     """Per-patient engagement stats over the most recent ``horizon_days``."""
     if events.empty:
+        log.warning(
+            "engagement events DataFrame is empty — model will train with zero "
+            "engagement features for every patient. If this is unexpected, check "
+            "data/synthetic/engagement_events.parquet exists."
+        )
         return pd.DataFrame()
     ev = events.copy()
     ev["ts"] = pd.to_datetime(ev["ts"], utc=True)
@@ -89,6 +94,7 @@ def build_features(
     patients: pd.DataFrame,
     cache: bool = True,
     archetypes: pd.DataFrame | None = None,
+    seed: int = 0,
 ) -> FeatureFrame:
     """Construct the canonical feature frame.
 
@@ -140,7 +146,7 @@ def build_features(
             axis=1,
         )
 
-    rng = np.random.default_rng(0)
+    rng = np.random.default_rng(seed)
     if not last_hba1c_target.empty:
         y_hba1c = last_hba1c_target.reindex(X.index)
         # For any patient without a held-out HbA1c, mean-impute then add
