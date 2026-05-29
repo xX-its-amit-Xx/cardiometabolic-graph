@@ -17,6 +17,7 @@ from etl._common import processed_path, synthetic_path
 from models._features import load_cached
 
 from dashboard._summary import PatientSummaryInputs, build_summary
+from summarizer import PatientFacts, SummaryRequest, get_summarizer
 
 st.set_page_config(page_title="Cardiometabolic Graph — Clinician View", layout="wide", page_icon="🩺")
 
@@ -85,6 +86,27 @@ with st.sidebar:
         st.error("No patients available.")
         st.stop()
     pid = st.selectbox("Patient ID", available_pids, index=0)
+
+    st.divider()
+    st.subheader("Summary backend")
+    backend_name = st.radio(
+        "Generate the clinician summary using:",
+        ("deterministic", "ollama", "transformers"),
+        index=0,
+        help=(
+            "deterministic: template engine — always auditable, no LLM.\n"
+            "ollama: local Ollama server (http://localhost:11434).\n"
+            "transformers: open-weight HF model (downloads on first use).\n"
+            "All three are open-source — no proprietary API required."
+        ),
+    )
+    audience = st.selectbox(
+        "Audience",
+        ("clinician", "patient", "care_coordinator", "prior_auth"),
+        index=0,
+        help="LLM backends adapt language to the audience. Deterministic ignores this.",
+    )
+
     st.divider()
     st.caption("Models loaded:")
     st.write(
@@ -125,20 +147,24 @@ if not shap_values.empty and pid in shap_values.index:
     row = shap_values.loc[pid]
     top_factors = sorted(row.items(), key=lambda kv: -abs(kv[1]))[:5]
 
-summary = build_summary(PatientSummaryInputs(
-    patient_id=pid,
-    last_hba1c=last_hba1c,
-    pred_hba1c_next=pred_next,
-    pred_hba1c_low=pred_low,
-    pred_hba1c_high=pred_high,
-    last_ldl=last_ldl,
-    last_bp_sys=last_bp_sys,
-    last_bp_dia=last_bp_dia,
-    app_opens_30d=opens_30,
-    message_responses_30d=resp_30,
-    glucose_logs_30d=glog_30,
-    dropout_risk=dropout_risk,
-    top_factors=top_factors,
+summarizer = get_summarizer(backend_name)
+summary = summarizer.summarize(SummaryRequest(
+    facts=PatientFacts(
+        patient_id=pid,
+        last_hba1c=last_hba1c,
+        pred_hba1c_next=pred_next,
+        pred_hba1c_low=pred_low,
+        pred_hba1c_high=pred_high,
+        last_ldl=last_ldl,
+        last_bp_sys=last_bp_sys,
+        last_bp_dia=last_bp_dia,
+        app_opens_30d=opens_30,
+        message_responses_30d=resp_30,
+        glucose_logs_30d=glog_30,
+        dropout_risk=dropout_risk,
+        top_factors=top_factors,
+    ),
+    audience=audience,
 ))
 
 # ---- Header KPIs ----

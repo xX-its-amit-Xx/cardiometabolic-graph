@@ -62,6 +62,14 @@ dev = [
     "jupyter>=1.0",
     "nbstripout>=0.7",
 ]
+# Optional open-weight LLM backend for the summarizer package. The
+# Ollama backend uses stdlib HTTP and needs none of these; this extra
+# is only required for the in-process HuggingFace path.
+llm-local = [
+    "transformers>=4.43",
+    "torch>=2.2",
+    "accelerate>=0.30",
+]
 
 [project.urls]
 Homepage = "https://github.com/amitshenoy/cardiometabolic-graph"
@@ -86,6 +94,7 @@ packages = [
     "dashboard",
     "data.synthetic",
     "cookbook",
+    "summarizer",
 ]
 
 [tool.setuptools.package-data]
