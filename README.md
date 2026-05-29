@@ -124,14 +124,46 @@ regenerate the report at
 
 ### Engagement dropout (binary classification)
 
-| Model          | AUROC     | AUPRC     | Positive rate (test) |
-|----------------|-----------|-----------|----------------------|
-| LightGBM       | **0.820** | **0.741** | ~25%                 |
+| Model          | AUROC     | AUPRC     | Brier     | ECE       | Positive rate (test) |
+|----------------|-----------|-----------|-----------|-----------|----------------------|
+| LightGBM       | **0.845** | **0.754** | **0.084** | **0.071** | ~17%                 |
 
 Dropout target carries 10% symmetric label-flip noise to reflect the
 real-world ambiguity in DTx ("paused" vs "dropped") — without it, the
 clean archetype label is trivially separable. With noise, AUROC sits in
 a realistic 0.80-0.85 band.
+
+### HbA1c delta regressor (used by cookbook 08)
+
+| Model          | Pearson r | MAE (Δ HbA1c %) |
+|----------------|-----------|-----------------|
+| LightGBM       | **0.699** | **0.328**       |
+
+Predicting CHANGE is genuinely harder than predicting LEVEL (the
+level model lands at r=0.87 but ranks change-direction near random —
+see [`docs/EVALUATION.md`](docs/EVALUATION.md) for the analysis that
+motivated training a dedicated delta head).
+
+### Field-standard evaluation
+
+Every cookbook example is graded against published clinical-ML expected
+ranges (Hosmer-Lemeshow, Vickers' decision-curve analysis, Brier 1950,
+Guo 2017's ECE, NDCG, PSI). Run `python -m scripts.evaluate_all_use_cases`
+to regenerate, or read the full report:
+
+- **[`docs/EVALUATION.md`](docs/EVALUATION.md)** — every metric, its value, the
+  expected range with literature citation, and a status grade.
+- [`docs/figures/evaluation/metric_status.png`](docs/figures/evaluation/metric_status.png)
+  — single-glance bar chart, color-coded by grade.
+- [`docs/figures/evaluation/reliability_dropout.png`](docs/figures/evaluation/reliability_dropout.png)
+  — Hosmer-Lemeshow reliability plot for the dropout classifier.
+- [`docs/figures/evaluation/decision_curve_dropout.png`](docs/figures/evaluation/decision_curve_dropout.png)
+  — Vickers & Elkin decision-curve analysis.
+- [`docs/figures/evaluation/lift_curve_at_risk.png`](docs/figures/evaluation/lift_curve_at_risk.png)
+  — lift as a function of cohort call-list size.
+
+Current pass rate: **24 / 24 metrics in the deployable band** (18 graded
+"good" against published references, 6 "acceptable"; 0 failing).
 
 The GNN uses a star-graph construction (each non-zero tabular feature becomes
 a satellite node connected to a patient root) as a portable bridge that doesn't

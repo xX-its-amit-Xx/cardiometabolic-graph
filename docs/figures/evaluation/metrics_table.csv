@@ -1,0 +1,29 @@
+use_case,metric,metric_key,value,grade,hint,detail
+model_hba1c_gbm,Pearson r,pearson_r_hba1c,0.8773211785319502,good,>=0.75 (matches published clinical-ML literature),vs held-out HbA1c
+model_hba1c_gbm,MAE (%),mae_hba1c,0.37913849129217675,acceptable,<=0.5 (acceptable),R^2=0.769
+model_dropout_gbm,AUROC,auroc,0.845,good,>=0.8 (matches published clinical-ML literature),discrimination
+model_dropout_gbm,AUPRC,auprc,0.7537611861822389,good,>=0.5 (matches published clinical-ML literature),base rate 17%
+model_dropout_gbm,Brier,brier,0.0842137596620844,good,<=0.15 (matches or beats published clinical-ML literature),probability MSE
+model_dropout_gbm,ECE,ece,0.07108375850913656,acceptable,<=0.1 (acceptable),expected calibration error
+01_at_risk_cohort,NDCG@50,ndcg,0.957334446490993,good,>=0.8 (matches published clinical-ML literature),ranking quality of the predicted-rise score
+01_at_risk_cohort,Lift@50,lift,2.16,good,>=2.0 (matches published clinical-ML literature),top 50 vs random — base rate 25%
+01_at_risk_cohort,Capture@50,capture,0.9,good,>=0.5 (matches published clinical-ML literature),share of true risers (top quartile) caught in top 50
+02_reengagement_outreach,AUROC,auroc,0.845,good,>=0.8 (matches published clinical-ML literature),discrimination of dropout vs. continued engagement
+02_reengagement_outreach,AUPRC,auprc,0.7537611861822389,good,>=0.5 (matches published clinical-ML literature),AUPRC vs base rate 17%
+02_reengagement_outreach,Brier,brier,0.0842137596620844,good,<=0.15 (matches or beats published clinical-ML literature),probability-MSE (lower is better)
+02_reengagement_outreach,ECE,ece,0.07108375850913656,acceptable,<=0.1 (acceptable),expected calibration error over 10 deciles
+02_reengagement_outreach,Lift@50,lift,1.9200000000000002,acceptable,>=1.5 (acceptable),outreach efficiency vs uniform sampling
+02_reengagement_outreach,Capture@50,capture,0.8,good,>=0.5 (matches published clinical-ML literature),share of true dropouts reached
+02_reengagement_outreach,Precision@0.5,auprc,0.7222222222222222,good,>=0.5 (matches published clinical-ML literature),"18 flagged at threshold 0.5 (sens=0.65, spec=0.95)"
+03_pathway_anchored_explanation,Pathway coverage of top-5 SHAP,completeness,1.0,good,>=1.0 (matches published clinical-ML literature),fraction of top global features that map to a Reactome pathway
+03_pathway_anchored_explanation,Non-degenerate features,completeness,1.0,good,>=1.0 (matches published clinical-ML literature),38 features carry meaningful mean(|SHAP|)
+04_cohort_drift_monitor,PSI sensitivity (+30% population shift),psi,0.21982141000826513,good,PSI=0.220 crosses alarm threshold 0.2,should exceed alarm threshold 0.2
+04_cohort_drift_monitor,PSI specificity (no-change control),psi,2.4341013436332362e-05,good,<=0.05 (matches or beats published clinical-ML literature),PSI on identical distribution — should be ~0 (false-alarm rate)
+05_prior_auth_note,PA template completeness,completeness,1.0,good,>=1.0 (matches published clinical-ML literature),6/6 required sections present in pa_note_SYN000270.md
+06_pre_visit_summary,Questions present per patient,completeness,1.0,good,>=1.0 (matches published clinical-ML literature),5 patient blocks in pre_visit_2026-05-29_clinician.md
+07_trial_eligibility,Precision@top20,completeness,1.0,good,>=1.0 (matches published clinical-ML literature),20/20 top candidates are gold-standard eligible (|gold|=121)
+07_trial_eligibility,Capture@top121,capture,1.0,good,>=0.5 (matches published clinical-ML literature),share of gold caught when budget matches |gold|=121
+07_trial_eligibility,Specificity@top20,specificity,1.0,good,>=0.75 (matches published clinical-ML literature),479/479 non-eligibles correctly excluded
+08_pharmacist_intervention,NDCG@30,ndcg,0.7407185158484243,acceptable,>=0.65 (acceptable),ranking quality of delta regressor
+08_pharmacist_intervention,Lift@30,lift,2.3357142857142854,good,>=2.0 (matches published clinical-ML literature),top 30 vs random — base rate 26%
+08_pharmacist_intervention,Capture@30,capture,0.6428571428571429,good,>=0.5 (matches published clinical-ML literature),share of true risers (top quartile) reached using delta regressor
