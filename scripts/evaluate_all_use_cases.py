@@ -15,6 +15,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
@@ -34,7 +35,7 @@ GRADE_COLORS = {
     "acceptable": "#91cf60",
     "below_acceptable": "#fdae61",
     "below_floor": "#d73027",
-    "above_ceiling": "#542788",   # purple — "suspiciously good"
+    "above_ceiling": "#542788",  # purple — "suspiciously good"
 }
 
 
@@ -44,9 +45,11 @@ def _plot_reliability(y_true: np.ndarray, y_prob: np.ndarray, path: Path) -> Non
     ax.plot([0, 1], [0, 1], "--", color="grey", label="perfect calibration")
     ax.plot(rc.bin_centers, rc.observed, "o-", color="#2c7fb8", label="model")
     for x, y, n in zip(rc.bin_centers, rc.observed, rc.counts, strict=True):
-        ax.annotate(f"n={n}", (x, y), fontsize=7, alpha=0.6,
-                    xytext=(3, 3), textcoords="offset points")
-    ax.set_xlim(0, 1); ax.set_ylim(0, 1)
+        ax.annotate(
+            f"n={n}", (x, y), fontsize=7, alpha=0.6, xytext=(3, 3), textcoords="offset points"
+        )
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
     ax.set_xlabel("Predicted dropout probability")
     ax.set_ylabel("Observed dropout rate")
     ax.set_title("Reliability — engagement dropout (Hosmer-Lemeshow style)")
@@ -73,7 +76,10 @@ def _plot_decision_curve(y_true: np.ndarray, y_prob: np.ndarray, path: Path) -> 
 
 
 def _plot_lift_curve(
-    scores: np.ndarray, y_true: np.ndarray, title: str, path: Path,
+    scores: np.ndarray,
+    y_true: np.ndarray,
+    title: str,
+    path: Path,
     ks: list[int] | None = None,
 ) -> None:
     if ks is None:
@@ -100,7 +106,7 @@ def _plot_metric_status(df: pd.DataFrame, path: Path) -> None:
     palette = [GRADE_COLORS.get(g, "#888") for g in df["grade"]]
     y_pos = np.arange(len(df))
     ax.barh(y_pos, df["value"], color=palette)
-    for i, (val, hint) in enumerate(zip(df["value"], df["hint"], strict=True)):
+    for i, (val, _hint) in enumerate(zip(df["value"], df["hint"], strict=True)):
         ax.text(val, i, f"  {val:.3f}", va="center", fontsize=8)
     labels = df["use_case"] + "  —  " + df["metric"]
     ax.set_yticks(y_pos)
@@ -110,6 +116,7 @@ def _plot_metric_status(df: pd.DataFrame, path: Path) -> None:
     ax.set_title("Per-metric value with field-standard grade")
     # Custom legend
     from matplotlib.patches import Patch
+
     handles = [Patch(color=c, label=g) for g, c in GRADE_COLORS.items()]
     ax.legend(handles=handles, fontsize=7, loc="lower right")
     fig.tight_layout()
@@ -122,18 +129,20 @@ def main() -> None:
     art = _load_artifacts()
     results = all_evaluators(art)
 
-    df = pd.DataFrame([
-        {
-            "use_case": r.use_case,
-            "metric": r.metric,
-            "metric_key": r.metric_key,
-            "value": r.value,
-            "grade": r.grade,
-            "hint": r.hint,
-            "detail": r.detail,
-        }
-        for r in results
-    ])
+    df = pd.DataFrame(
+        [
+            {
+                "use_case": r.use_case,
+                "metric": r.metric,
+                "metric_key": r.metric_key,
+                "value": r.value,
+                "grade": r.grade,
+                "hint": r.hint,
+                "detail": r.detail,
+            }
+            for r in results
+        ]
+    )
     df.to_csv(FIG_DIR / "metrics_table.csv", index=False)
 
     # Figures that need raw arrays:
@@ -145,8 +154,9 @@ def main() -> None:
         p_arr = p.loc[common].to_numpy()
         _plot_reliability(y_arr, p_arr, FIG_DIR / "reliability_dropout.png")
         _plot_decision_curve(y_arr, p_arr, FIG_DIR / "decision_curve_dropout.png")
-        _plot_lift_curve(p_arr, y_arr, "Lift — engagement-dropout outreach",
-                         FIG_DIR / "lift_curve_dropout.png")
+        _plot_lift_curve(
+            p_arr, y_arr, "Lift — engagement-dropout outreach", FIG_DIR / "lift_curve_dropout.png"
+        )
 
     # At-risk lift: predicted delta vs true top-quartile delta
     if art["gbm_pred"] is not None and art["y_hba1c"] is not None and art["features"] is not None:
@@ -159,9 +169,12 @@ def main() -> None:
         delta_pred = pred.loc[common] - last
         threshold = float(np.quantile(actual, 0.75))
         relevance = (actual >= threshold).astype(int).to_numpy()
-        _plot_lift_curve(delta_pred.to_numpy(), relevance,
-                         "Lift — at-risk cohort (predicted HbA1c rise)",
-                         FIG_DIR / "lift_curve_at_risk.png")
+        _plot_lift_curve(
+            delta_pred.to_numpy(),
+            relevance,
+            "Lift — at-risk cohort (predicted HbA1c rise)",
+            FIG_DIR / "lift_curve_at_risk.png",
+        )
 
     _plot_metric_status(df, FIG_DIR / "metric_status.png")
 
@@ -174,8 +187,10 @@ def main() -> None:
 
 def _render_eval_markdown(df: pd.DataFrame) -> str:
     grade_emoji = {
-        "good": "🟢", "acceptable": "🟢",
-        "below_acceptable": "🟡", "below_floor": "🔴",
+        "good": "🟢",
+        "acceptable": "🟢",
+        "below_acceptable": "🟡",
+        "below_floor": "🔴",
         "above_ceiling": "🟣",
     }
     lines: list[str] = []
@@ -201,7 +216,8 @@ def _render_eval_markdown(df: pd.DataFrame) -> str:
             r = RANGES.get(row["metric_key"])
             band = (
                 f"floor {r.floor} / acceptable {r.acceptable} / good {r.good} / ceiling {r.ceiling}"
-                if r else "—"
+                if r
+                else "—"
             )
             source = r.rationale if r else "—"
             lines.append(
@@ -212,12 +228,24 @@ def _render_eval_markdown(df: pd.DataFrame) -> str:
         lines.append("")
 
     lines.append("## Figures\n")
-    lines.append("- [`reliability_dropout.png`](figures/evaluation/reliability_dropout.png) — Hosmer-Lemeshow reliability plot for the engagement-dropout classifier.")
-    lines.append("- [`decision_curve_dropout.png`](figures/evaluation/decision_curve_dropout.png) — Vickers & Elkin decision-curve analysis: is acting on the model better than `treat all` / `treat none`?")
-    lines.append("- [`lift_curve_at_risk.png`](figures/evaluation/lift_curve_at_risk.png) — Lift as a function of cohort-call list size, for the at-risk cohort cookbook.")
-    lines.append("- [`lift_curve_dropout.png`](figures/evaluation/lift_curve_dropout.png) — Same, for the dropout re-engagement cookbook.")
-    lines.append("- [`metric_status.png`](figures/evaluation/metric_status.png) — every reported metric color-coded by field-standard grade.")
-    lines.append("- [`metrics_table.csv`](figures/evaluation/metrics_table.csv) — raw numbers behind everything above.")
+    lines.append(
+        "- [`reliability_dropout.png`](figures/evaluation/reliability_dropout.png) — Hosmer-Lemeshow reliability plot for the engagement-dropout classifier."
+    )
+    lines.append(
+        "- [`decision_curve_dropout.png`](figures/evaluation/decision_curve_dropout.png) — Vickers & Elkin decision-curve analysis: is acting on the model better than `treat all` / `treat none`?"
+    )
+    lines.append(
+        "- [`lift_curve_at_risk.png`](figures/evaluation/lift_curve_at_risk.png) — Lift as a function of cohort-call list size, for the at-risk cohort cookbook."
+    )
+    lines.append(
+        "- [`lift_curve_dropout.png`](figures/evaluation/lift_curve_dropout.png) — Same, for the dropout re-engagement cookbook."
+    )
+    lines.append(
+        "- [`metric_status.png`](figures/evaluation/metric_status.png) — every reported metric color-coded by field-standard grade."
+    )
+    lines.append(
+        "- [`metrics_table.csv`](figures/evaluation/metrics_table.csv) — raw numbers behind everything above."
+    )
     lines.append("")
 
     lines.append("## How to interpret a row\n")

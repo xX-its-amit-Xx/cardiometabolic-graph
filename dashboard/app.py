@@ -15,11 +15,11 @@ import streamlit as st
 
 from etl._common import processed_path, synthetic_path
 from models._features import load_cached
-
-from dashboard._summary import PatientSummaryInputs, build_summary
 from summarizer import PatientFacts, SummaryRequest, get_summarizer
 
-st.set_page_config(page_title="Cardiometabolic Graph — Clinician View", layout="wide", page_icon="🩺")
+st.set_page_config(
+    page_title="Cardiometabolic Graph — Clinician View", layout="wide", page_icon="🩺"
+)
 
 st.title("Cardiometabolic patient summary")
 st.caption(
@@ -73,11 +73,13 @@ if ff is None and events_df.empty:
     )
     st.stop()
 
-available_pids = sorted(set(
-    list((ff.patient_ids if ff is not None else pd.Index([])))
-    + list(events_df["patient_id"].unique())
-    + list(labs_df["patient_id"].unique())
-))
+available_pids = sorted(
+    set(
+        list(ff.patient_ids if ff is not None else pd.Index([]))
+        + list(events_df["patient_id"].unique())
+        + list(labs_df["patient_id"].unique())
+    )
+)
 
 # ---- Sidebar ----
 with st.sidebar:
@@ -112,8 +114,8 @@ with st.sidebar:
     st.write(
         {
             "gbm_hba1c": not gbm_pred.empty,
-            "dropout":   not drop_pred.empty,
-            "shap":      not shap_values.empty,
+            "dropout": not drop_pred.empty,
+            "shap": not shap_values.empty,
         }
     )
 
@@ -124,10 +126,16 @@ labs = labs_df[labs_df["patient_id"] == pid].sort_values("taken_ts")
 hba1c_series = labs[labs["name"] == "HbA1c"]
 last_hba1c = float(hba1c_series["value"].iloc[-1]) if not hba1c_series.empty else None
 
-pred_next = float(gbm_pred.loc[pid, "pred"]) if not gbm_pred.empty and pid in gbm_pred.index else None
-pred_low  = pred_next - 0.5 if pred_next is not None else None
+pred_next = (
+    float(gbm_pred.loc[pid, "pred"]) if not gbm_pred.empty and pid in gbm_pred.index else None
+)
+pred_low = pred_next - 0.5 if pred_next is not None else None
 pred_high = pred_next + 0.5 if pred_next is not None else None
-dropout_risk = float(drop_pred.loc[pid, "p_dropout"]) if not drop_pred.empty and pid in drop_pred.index else None
+dropout_risk = (
+    float(drop_pred.loc[pid, "p_dropout"])
+    if not drop_pred.empty and pid in drop_pred.index
+    else None
+)
 
 last_ldl = None
 last_bp_sys = None
@@ -148,30 +156,39 @@ if not shap_values.empty and pid in shap_values.index:
     top_factors = sorted(row.items(), key=lambda kv: -abs(kv[1]))[:5]
 
 summarizer = get_summarizer(backend_name)
-summary = summarizer.summarize(SummaryRequest(
-    facts=PatientFacts(
-        patient_id=pid,
-        last_hba1c=last_hba1c,
-        pred_hba1c_next=pred_next,
-        pred_hba1c_low=pred_low,
-        pred_hba1c_high=pred_high,
-        last_ldl=last_ldl,
-        last_bp_sys=last_bp_sys,
-        last_bp_dia=last_bp_dia,
-        app_opens_30d=opens_30,
-        message_responses_30d=resp_30,
-        glucose_logs_30d=glog_30,
-        dropout_risk=dropout_risk,
-        top_factors=top_factors,
-    ),
-    audience=audience,
-))
+summary = summarizer.summarize(
+    SummaryRequest(
+        facts=PatientFacts(
+            patient_id=pid,
+            last_hba1c=last_hba1c,
+            pred_hba1c_next=pred_next,
+            pred_hba1c_low=pred_low,
+            pred_hba1c_high=pred_high,
+            last_ldl=last_ldl,
+            last_bp_sys=last_bp_sys,
+            last_bp_dia=last_bp_dia,
+            app_opens_30d=opens_30,
+            message_responses_30d=resp_30,
+            glucose_logs_30d=glog_30,
+            dropout_risk=dropout_risk,
+            top_factors=top_factors,
+        ),
+        audience=audience,
+    )
+)
 
 # ---- Header KPIs ----
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Last HbA1c (%)", f"{last_hba1c:.1f}" if last_hba1c is not None else "n/a")
-c2.metric("Predicted next HbA1c (%)", f"{pred_next:.1f}" if pred_next is not None else "n/a",
-          delta=(f"{pred_next - last_hba1c:+.2f}" if (pred_next is not None and last_hba1c is not None) else None))
+c2.metric(
+    "Predicted next HbA1c (%)",
+    f"{pred_next:.1f}" if pred_next is not None else "n/a",
+    delta=(
+        f"{pred_next - last_hba1c:+.2f}"
+        if (pred_next is not None and last_hba1c is not None)
+        else None
+    ),
+)
 c3.metric("30-day app opens", opens_30)
 c4.metric("Dropout risk", f"{dropout_risk:.0%}" if dropout_risk is not None else "n/a")
 
@@ -183,11 +200,7 @@ st.markdown("### Engagement timeline (last 180 days)")
 if ev.empty:
     st.write("_No engagement events for this patient._")
 else:
-    daily = (
-        ev.groupby([pd.Grouper(key="ts", freq="D"), "kind"])
-        .size()
-        .reset_index(name="count")
-    )
+    daily = ev.groupby([pd.Grouper(key="ts", freq="D"), "kind"]).size().reset_index(name="count")
     fig = px.area(daily, x="ts", y="count", color="kind", groupnorm=None, height=320)
     fig.update_layout(margin=dict(l=10, r=10, t=10, b=10), legend_title=None)
     st.plotly_chart(fig, use_container_width=True)
@@ -199,22 +212,34 @@ if hba1c_series.empty and pred_next is None:
 else:
     fig = go.Figure()
     if not hba1c_series.empty:
-        fig.add_trace(go.Scatter(
-            x=hba1c_series["taken_ts"], y=hba1c_series["value"],
-            mode="markers+lines", name="observed",
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=hba1c_series["taken_ts"],
+                y=hba1c_series["value"],
+                mode="markers+lines",
+                name="observed",
+            )
+        )
     if pred_next is not None and not hba1c_series.empty:
         next_ts = hba1c_series["taken_ts"].iloc[-1] + pd.Timedelta(days=90)
-        fig.add_trace(go.Scatter(
-            x=[next_ts, next_ts], y=[pred_low, pred_high],
-            mode="lines", line=dict(width=10, color="rgba(0,100,200,0.25)"),
-            showlegend=False,
-        ))
-        fig.add_trace(go.Scatter(
-            x=[next_ts], y=[pred_next], mode="markers",
-            name="predicted",
-            marker=dict(size=14, color="rgba(0,100,200,1)", symbol="diamond"),
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=[next_ts, next_ts],
+                y=[pred_low, pred_high],
+                mode="lines",
+                line=dict(width=10, color="rgba(0,100,200,0.25)"),
+                showlegend=False,
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=[next_ts],
+                y=[pred_next],
+                mode="markers",
+                name="predicted",
+                marker=dict(size=14, color="rgba(0,100,200,1)", symbol="diamond"),
+            )
+        )
     fig.update_yaxes(title="HbA1c (%)")
     fig.update_layout(height=320, margin=dict(l=10, r=10, t=10, b=10))
     st.plotly_chart(fig, use_container_width=True)
@@ -227,8 +252,16 @@ else:
     factor_df = pd.DataFrame(top_factors, columns=["feature", "shap"])
     factor_df["abs"] = factor_df["shap"].abs()
     factor_df = factor_df.sort_values("abs", ascending=True)
-    fig = px.bar(factor_df, x="shap", y="feature", orientation="h", height=320,
-                 color="shap", color_continuous_scale="RdBu_r", color_continuous_midpoint=0)
+    fig = px.bar(
+        factor_df,
+        x="shap",
+        y="feature",
+        orientation="h",
+        height=320,
+        color="shap",
+        color_continuous_scale="RdBu_r",
+        color_continuous_midpoint=0,
+    )
     fig.update_layout(margin=dict(l=10, r=10, t=10, b=10), coloraxis_showscale=False)
     st.plotly_chart(fig, use_container_width=True)
 

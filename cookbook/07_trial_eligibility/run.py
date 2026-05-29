@@ -10,8 +10,7 @@ from typing import Literal
 
 import pandas as pd
 
-from etl._common import log, processed_path, synthetic_path
-
+from etl._common import log, processed_path
 
 HERE = Path(__file__).resolve().parent
 
@@ -19,7 +18,7 @@ HERE = Path(__file__).resolve().parent
 @dataclass
 class Criterion:
     name: str
-    feature: str           # name of the per-patient feature to evaluate
+    feature: str  # name of the per-patient feature to evaluate
     op: Literal["between", ">=", "<=", "==", "!="]
     threshold: float | tuple[float, float] | str
     direction: Literal["inclusion", "exclusion"] = "inclusion"
@@ -47,7 +46,7 @@ class TrialSpec:
     criteria: list[Criterion] = field(default_factory=list)
 
     @classmethod
-    def from_json(cls, path: Path) -> "TrialSpec":
+    def from_json(cls, path: Path) -> TrialSpec:
         raw = json.loads(path.read_text(encoding="utf-8"))
         return cls(
             name=raw["name"],
@@ -56,7 +55,11 @@ class TrialSpec:
                     name=c["name"],
                     feature=c["feature"],
                     op=c["op"],
-                    threshold=tuple(c["threshold"]) if isinstance(c["threshold"], list) else c["threshold"],
+                    threshold=(
+                        tuple(c["threshold"])
+                        if isinstance(c["threshold"], list)
+                        else c["threshold"]
+                    ),
                     direction=c.get("direction", "inclusion"),
                 )
                 for c in raw["criteria"]
@@ -72,8 +75,7 @@ DEFAULT_SPEC = TrialSpec(
         Criterion("Age 30–70", "age_years", "between", (30.0, 70.0)),
         Criterion("LDL not extreme (<200)", "ldl_last", "<=", 200.0),
         Criterion("Triglycerides <500", "triglycerides_last", "<=", 500.0),
-        Criterion("Min 30-day app engagement (≥20 opens)",
-                  "app_open_count_30d", ">=", 20.0),
+        Criterion("Min 30-day app engagement (≥20 opens)", "app_open_count_30d", ">=", 20.0),
     ],
 )
 
@@ -107,21 +109,27 @@ def screen(spec: TrialSpec, top: int = 20) -> tuple[pd.DataFrame, pd.DataFrame]:
             per_crit[c.name] = ok
             met += int(ok)
 
-        eng_score = float(row.get("app_open_count_30d", 0.0)) + \
-                    float(row.get("glucose_log_count_30d", 0.0))
-        rows.append({
-            "patient_id": pid,
-            "n_criteria_met": met,
-            "n_criteria_total": len(spec.criteria),
-            "engagement_score": eng_score,
-            "all_criteria_met": met == len(spec.criteria),
-        })
+        eng_score = float(row.get("app_open_count_30d", 0.0)) + float(
+            row.get("glucose_log_count_30d", 0.0)
+        )
+        rows.append(
+            {
+                "patient_id": pid,
+                "n_criteria_met": met,
+                "n_criteria_total": len(spec.criteria),
+                "engagement_score": eng_score,
+                "all_criteria_met": met == len(spec.criteria),
+            }
+        )
         per_crit["patient_id"] = pid
         grid.append(per_crit)
 
-    summary = pd.DataFrame(rows).sort_values(
-        ["n_criteria_met", "engagement_score"], ascending=[False, False]
-    ).head(top).reset_index(drop=True)
+    summary = (
+        pd.DataFrame(rows)
+        .sort_values(["n_criteria_met", "engagement_score"], ascending=[False, False])
+        .head(top)
+        .reset_index(drop=True)
+    )
     grid_df = pd.DataFrame(grid).set_index("patient_id").reindex(summary["patient_id"])
     return summary, grid_df
 
@@ -146,9 +154,7 @@ def write_report(spec: TrialSpec, summary: pd.DataFrame, grid: pd.DataFrame) -> 
     lines.append("| " + " | ".join(headers) + " |")
     lines.append("|" + "|".join(["---"] * len(headers)) + "|")
     for i, row in summary.iterrows():
-        crit_cells = [
-            "✓" if grid.loc[row["patient_id"], c.name] else "✗" for c in spec.criteria
-        ]
+        crit_cells = ["✓" if grid.loc[row["patient_id"], c.name] else "✗" for c in spec.criteria]
         lines.append(
             f"| {i+1} | `{row['patient_id']}` | {row['n_criteria_met']}/{row['n_criteria_total']} "
             f"| {row['engagement_score']:.0f} | " + " | ".join(crit_cells) + " |"
@@ -159,8 +165,12 @@ def write_report(spec: TrialSpec, summary: pd.DataFrame, grid: pd.DataFrame) -> 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--spec", type=Path, default=None,
-                        help="Path to a TrialSpec JSON file. If omitted, uses the default GLP-1 spec.")
+    parser.add_argument(
+        "--spec",
+        type=Path,
+        default=None,
+        help="Path to a TrialSpec JSON file. If omitted, uses the default GLP-1 spec.",
+    )
     parser.add_argument("--top", type=int, default=20)
     args = parser.parse_args()
 

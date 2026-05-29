@@ -6,6 +6,7 @@ import argparse
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,7 +14,6 @@ import pandas as pd
 
 from etl._common import log, synthetic_path
 from models._features import _build_engagement_features, load_cached
-
 
 HERE = Path(__file__).resolve().parent
 FIG_DIR = HERE / "figures"
@@ -61,15 +61,17 @@ def compute_drift(window_days: int = 30, psi_alarm: float = 0.2) -> pd.DataFrame
         ref_vals = reference[col].to_numpy(dtype=float)
         cur_vals = current[col].to_numpy(dtype=float)
         psi = _psi(ref_vals, cur_vals)
-        rows.append({
-            "feature": col,
-            "psi": psi,
-            "alarm": psi > psi_alarm,
-            "ref_mean": float(np.nanmean(ref_vals)),
-            "cur_mean": float(np.nanmean(cur_vals)),
-            "n_ref": int(len(ref_vals)),
-            "n_cur": int(len(cur_vals)),
-        })
+        rows.append(
+            {
+                "feature": col,
+                "psi": psi,
+                "alarm": psi > psi_alarm,
+                "ref_mean": float(np.nanmean(ref_vals)),
+                "cur_mean": float(np.nanmean(cur_vals)),
+                "n_ref": len(ref_vals),
+                "n_cur": len(cur_vals),
+            }
+        )
     df = pd.DataFrame(rows).sort_values("psi", ascending=False).reset_index(drop=True)
     return df
 
@@ -80,7 +82,9 @@ def write_report(df: pd.DataFrame, out_dir: Path = HERE) -> None:
 
     top = df.head(15)
     plt.figure(figsize=(7, 4))
-    bars = plt.barh(top["feature"], top["psi"], color=["#cc4444" if a else "#88aaff" for a in top["alarm"]])
+    plt.barh(
+        top["feature"], top["psi"], color=["#cc4444" if a else "#88aaff" for a in top["alarm"]]
+    )
     plt.axvline(0.1, color="#888", linestyle="--", linewidth=0.8, label="watch")
     plt.axvline(0.2, color="#c33", linestyle="--", linewidth=0.8, label="alarm")
     plt.xlabel("PSI")
@@ -92,7 +96,7 @@ def write_report(df: pd.DataFrame, out_dir: Path = HERE) -> None:
 
     alarms = df[df["alarm"]]
     md = ["# Cohort drift monitor", ""]
-    md.append(f"_Comparing the most recent window to the cached training reference._")
+    md.append("_Comparing the most recent window to the cached training reference._")
     md.append("")
     md.append(f"**{len(alarms)} alarming features** (PSI > 0.2).")
     md.append("")
@@ -121,8 +125,12 @@ def main() -> None:
 
     df = compute_drift(window_days=args.window_days, psi_alarm=args.psi_alarm)
     write_report(df)
-    log.info("wrote drift report (%d features, %d alarms) -> %s",
-             len(df), int(df["alarm"].sum()), HERE / "report.md")
+    log.info(
+        "wrote drift report (%d features, %d alarms) -> %s",
+        len(df),
+        int(df["alarm"].sum()),
+        HERE / "report.md",
+    )
 
 
 if __name__ == "__main__":

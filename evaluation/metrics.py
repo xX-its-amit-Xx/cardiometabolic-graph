@@ -17,8 +17,8 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
-
 # --- Calibration ----------------------------------------------------------
+
 
 def brier_score(y_true: np.ndarray, y_prob: np.ndarray) -> float:
     """Brier 1950.
@@ -32,14 +32,12 @@ def brier_score(y_true: np.ndarray, y_prob: np.ndarray) -> float:
 
 @dataclass
 class ReliabilityCurve:
-    bin_centers: np.ndarray   # mean predicted prob per bin
-    observed: np.ndarray      # mean actual outcome per bin
-    counts: np.ndarray        # patients per bin
+    bin_centers: np.ndarray  # mean predicted prob per bin
+    observed: np.ndarray  # mean actual outcome per bin
+    counts: np.ndarray  # patients per bin
 
 
-def reliability_curve(
-    y_true: np.ndarray, y_prob: np.ndarray, n_bins: int = 10
-) -> ReliabilityCurve:
+def reliability_curve(y_true: np.ndarray, y_prob: np.ndarray, n_bins: int = 10) -> ReliabilityCurve:
     """Hosmer-Lemeshow style reliability curve.
 
     Bins by predicted probability decile; plots observed outcome rate per
@@ -63,9 +61,7 @@ def reliability_curve(
     )
 
 
-def expected_calibration_error(
-    y_true: np.ndarray, y_prob: np.ndarray, n_bins: int = 10
-) -> float:
+def expected_calibration_error(y_true: np.ndarray, y_prob: np.ndarray, n_bins: int = 10) -> float:
     """Guo et al 2017 "On Calibration of Modern Neural Networks".
 
     Weighted average of |observed - predicted| over equal-width bins.
@@ -81,11 +77,12 @@ def expected_calibration_error(
 
 # --- Operating point at threshold ----------------------------------------
 
+
 @dataclass
 class OperatingPoint:
     threshold: float
     precision: float
-    recall: float           # = sensitivity
+    recall: float  # = sensitivity
     specificity: float
     f1: float
     n_called: int
@@ -110,12 +107,17 @@ def precision_recall_at_threshold(
     spec = tn / (tn + fp) if (tn + fp) else 0.0
     f1 = 2 * prec * rec / (prec + rec) if (prec + rec) else 0.0
     return OperatingPoint(
-        threshold=threshold, precision=prec, recall=rec,
-        specificity=spec, f1=f1, n_called=int(yhat.sum()),
+        threshold=threshold,
+        precision=prec,
+        recall=rec,
+        specificity=spec,
+        f1=f1,
+        n_called=int(yhat.sum()),
     )
 
 
 # --- Ranking / top-K -----------------------------------------------------
+
 
 def ndcg_at_k(scores: np.ndarray, relevance: np.ndarray, k: int) -> float:
     """Järvelin & Kekäläinen 2002 NDCG@K.
@@ -134,9 +136,7 @@ def ndcg_at_k(scores: np.ndarray, relevance: np.ndarray, k: int) -> float:
     return dcg / idcg if idcg > 0 else 0.0
 
 
-def lift_at_topk(
-    scores: np.ndarray, y_true: np.ndarray, k: int
-) -> float:
+def lift_at_topk(scores: np.ndarray, y_true: np.ndarray, k: int) -> float:
     """Lift = precision in top K / base rate.
 
     Lift of 2 means the top K is twice as enriched as random sampling.
@@ -152,9 +152,7 @@ def lift_at_topk(
     return top_rate / base
 
 
-def capture_at_topk(
-    scores: np.ndarray, y_true: np.ndarray, k: int
-) -> float:
+def capture_at_topk(scores: np.ndarray, y_true: np.ndarray, k: int) -> float:
     """Fraction of all true positives captured in the top-K."""
     if y_true.sum() == 0:
         return float("nan")
@@ -164,16 +162,18 @@ def capture_at_topk(
 
 # --- Decision-curve analysis ---------------------------------------------
 
+
 @dataclass
 class DecisionCurve:
     thresholds: np.ndarray
-    net_benefit: np.ndarray         # model
+    net_benefit: np.ndarray  # model
     net_benefit_treat_all: np.ndarray
     net_benefit_treat_none: np.ndarray
 
 
 def decision_curve(
-    y_true: np.ndarray, y_prob: np.ndarray,
+    y_true: np.ndarray,
+    y_prob: np.ndarray,
     thresholds: np.ndarray | None = None,
 ) -> DecisionCurve:
     """Vickers & Elkin 2006 "Decision-curve analysis".
@@ -213,6 +213,7 @@ def decision_curve(
 
 # --- Quick aggregators ---------------------------------------------------
 
+
 def auc_pair(y_true: np.ndarray, y_prob: np.ndarray) -> tuple[float, float]:
     """Convenience: (AUROC, AUPRC) on a single pass."""
     if len(np.unique(y_true)) < 2:
@@ -224,6 +225,7 @@ def regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, floa
     """Standard cardiometabolic regression triple: Pearson r, MAE, R^2."""
     from scipy.stats import pearsonr
     from sklearn.metrics import mean_absolute_error, r2_score
+
     if len(y_true) == 0:
         return {"pearson_r": float("nan"), "mae": float("nan"), "r2": float("nan")}
     r, _ = pearsonr(y_true, y_pred)

@@ -16,8 +16,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import pandas as pd
-
 
 @dataclass
 class PatientSummaryInputs:
@@ -33,7 +31,7 @@ class PatientSummaryInputs:
     message_responses_30d: int
     glucose_logs_30d: int
     dropout_risk: float | None
-    top_factors: list[tuple[str, float]]    # (feature_name, signed shap impact)
+    top_factors: list[tuple[str, float]]  # (feature_name, signed shap impact)
 
 
 def _hba1c_band(value: float | None) -> str:
@@ -74,7 +72,9 @@ def _dropout_phrase(p: float | None) -> str:
     if p is None:
         return ""
     if p >= 0.5:
-        return f" Model estimates elevated dropout risk ({p:.0%}) — consider a re-engagement outreach."
+        return (
+            f" Model estimates elevated dropout risk ({p:.0%}) — consider a re-engagement outreach."
+        )
     if p >= 0.25:
         return f" Dropout risk is moderate ({p:.0%})."
     return f" Dropout risk is low ({p:.0%})."
@@ -112,11 +112,15 @@ def build_summary(inp: PatientSummaryInputs) -> str:
         sentences.append(f"LDL last measured at {inp.last_ldl:.0f} mg/dL — above guideline.")
     if inp.last_bp_sys is not None and inp.last_bp_dia is not None:
         if inp.last_bp_sys >= 140 or inp.last_bp_dia >= 90:
-            sentences.append(f"BP {inp.last_bp_sys:.0f}/{inp.last_bp_dia:.0f} — stage 2 hypertensive range.")
+            sentences.append(
+                f"BP {inp.last_bp_sys:.0f}/{inp.last_bp_dia:.0f} — stage 2 hypertensive range."
+            )
         elif inp.last_bp_sys >= 130 or inp.last_bp_dia >= 80:
             sentences.append(f"BP {inp.last_bp_sys:.0f}/{inp.last_bp_dia:.0f} — elevated.")
 
-    sentences.append(_engagement_phrase(inp.app_opens_30d, inp.message_responses_30d, inp.glucose_logs_30d))
+    sentences.append(
+        _engagement_phrase(inp.app_opens_30d, inp.message_responses_30d, inp.glucose_logs_30d)
+    )
     sentences.append(_dropout_phrase(inp.dropout_risk).strip())
     sentences.append(_factors_phrase(inp.top_factors).strip())
 

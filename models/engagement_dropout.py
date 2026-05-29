@@ -13,7 +13,6 @@ from pathlib import Path
 
 import joblib
 import lightgbm as lgb
-import numpy as np
 import pandas as pd
 from sklearn.metrics import average_precision_score, roc_auc_score
 
@@ -52,14 +51,19 @@ def train_dropout(
         random_state=42,
     )
     model.fit(
-        train.X, train.y_dropout,
+        train.X,
+        train.y_dropout,
         eval_set=[(test.X, test.y_dropout)],
         callbacks=[lgb.early_stopping(30, verbose=False), lgb.log_evaluation(0)],
     )
 
     proba = model.predict_proba(test.X)[:, 1]
     auroc = roc_auc_score(test.y_dropout, proba) if test.y_dropout.nunique() > 1 else float("nan")
-    auprc = average_precision_score(test.y_dropout, proba) if test.y_dropout.nunique() > 1 else float("nan")
+    auprc = (
+        average_precision_score(test.y_dropout, proba)
+        if test.y_dropout.nunique() > 1
+        else float("nan")
+    )
 
     joblib.dump(model, artifact_dir / "dropout_clf.joblib")
     pd.Series(proba, index=test.patient_ids).to_frame("p_dropout").to_parquet(
@@ -67,8 +71,10 @@ def train_dropout(
     )
 
     result = DropoutResult(
-        auroc=float(auroc), auprc=float(auprc),
-        n_train=len(train.X), n_test=len(test.X),
+        auroc=float(auroc),
+        auprc=float(auprc),
+        n_train=len(train.X),
+        n_test=len(test.X),
         positives_train=int(train.y_dropout.sum()),
         positives_test=int(test.y_dropout.sum()),
     )

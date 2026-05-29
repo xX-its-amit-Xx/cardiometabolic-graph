@@ -57,13 +57,10 @@ _AUDIENCE_BLOCK = {
 def build_messages(request: SummaryRequest) -> list[dict]:
     """Build a chat-style messages list suitable for any open-weight
     instruct model (llama 3, mistral, phi-3 all accept this shape)."""
-    system = _BASE_RULES.format(max_words=request.max_words) + "\n\n" + \
-        _AUDIENCE_BLOCK[request.audience]
-    user = (
-        "Patient facts (JSON):\n"
-        f"{request.facts.to_dict()}\n\n"
-        "Write the summary now."
+    system = (
+        _BASE_RULES.format(max_words=request.max_words) + "\n\n" + _AUDIENCE_BLOCK[request.audience]
     )
+    user = "Patient facts (JSON):\n" f"{request.facts.to_dict()}\n\n" "Write the summary now."
     return [
         {"role": "system", "content": system},
         {"role": "user", "content": user},

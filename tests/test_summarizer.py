@@ -65,6 +65,7 @@ def test_ollama_falls_back_on_unreachable_server(facts: PatientFacts, monkeypatc
     # Point Ollama at a definitely-dead port so the request fails fast.
     monkeypatch.setenv("OLLAMA_HOST", "http://127.0.0.1:1")
     from summarizer.ollama import OllamaBackend
+
     backend = OllamaBackend(timeout=1.0)
     text = backend.summarize(SummaryRequest(facts=facts, max_words=80))
     assert "trend rising" in text
@@ -72,6 +73,7 @@ def test_ollama_falls_back_on_unreachable_server(facts: PatientFacts, monkeypatc
 
 def test_facts_to_dict_is_jsonable(facts: PatientFacts):
     import json
+
     d = facts.to_dict()
     # top_factors contains tuples which json can handle (as arrays)
     s = json.dumps(d, default=list)

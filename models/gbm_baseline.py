@@ -6,13 +6,12 @@ Same feature frame is reused by ``engagement_dropout.py`` for classification.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Literal
 
 import joblib
 import lightgbm as lgb
-import numpy as np
 import pandas as pd
 from scipy.stats import pearsonr
 from sklearn.metrics import mean_absolute_error
@@ -47,24 +46,29 @@ def train_regressor(
         objective = "binary"
         metric = "binary_logloss"
 
-    model = lgb.LGBMRegressor(
-        objective=objective,
-        metric=metric,
-        n_estimators=400,
-        learning_rate=0.05,
-        num_leaves=31,
-        min_child_samples=10,
-        random_state=42,
-    ) if target == "hba1c" else lgb.LGBMClassifier(
-        objective=objective,
-        n_estimators=400,
-        learning_rate=0.05,
-        num_leaves=31,
-        random_state=42,
+    model = (
+        lgb.LGBMRegressor(
+            objective=objective,
+            metric=metric,
+            n_estimators=400,
+            learning_rate=0.05,
+            num_leaves=31,
+            min_child_samples=10,
+            random_state=42,
+        )
+        if target == "hba1c"
+        else lgb.LGBMClassifier(
+            objective=objective,
+            n_estimators=400,
+            learning_rate=0.05,
+            num_leaves=31,
+            random_state=42,
+        )
     )
 
     model.fit(
-        train.X, y_tr,
+        train.X,
+        y_tr,
         eval_set=[(test.X, y_te)],
         callbacks=[lgb.early_stopping(30, verbose=False), lgb.log_evaluation(0)],
     )
@@ -92,8 +96,10 @@ def train_regressor(
     )
 
     result = GBMResult(
-        pearson_r=float(r), mae=float(mae),
-        n_train=len(train.X), n_test=len(test.X),
+        pearson_r=float(r),
+        mae=float(mae),
+        n_train=len(train.X),
+        n_test=len(test.X),
         feature_importance=importance,
     )
     (artifact_dir / f"gbm_{target}_result.json").write_text(json.dumps(asdict(result), indent=2))

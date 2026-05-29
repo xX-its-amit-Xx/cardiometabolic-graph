@@ -9,13 +9,13 @@ import argparse
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
 from etl._common import log
 from models._features import load_cached
-
 
 HERE = Path(__file__).resolve().parent
 FIG_DIR = HERE / "figures"
@@ -43,10 +43,7 @@ def _format_reason(pid: str, shap_row: pd.Series | None, last_hba1c: float) -> s
         impact = shap_row.loc[feat]
         direction = "raising" if impact > 0 else "lowering"
         parts.append(f"{feat} ({direction})")
-    return (
-        f"HbA1c last observed at {last_hba1c:.1f}%. "
-        f"Top factors: {', '.join(parts)}."
-    )
+    return f"HbA1c last observed at {last_hba1c:.1f}%. " f"Top factors: {', '.join(parts)}."
 
 
 def build_cohort(top: int = 50, threshold: float = 6.0) -> pd.DataFrame:
@@ -59,10 +56,12 @@ def build_cohort(top: int = 50, threshold: float = 6.0) -> pd.DataFrame:
     if last_col not in ff.X.columns:
         raise KeyError(f"Feature frame missing '{last_col}' — re-run feature build.")
 
-    df = pd.DataFrame({
-        "patient_id": pred.index,
-        "predicted_next_hba1c": pred.values,
-    })
+    df = pd.DataFrame(
+        {
+            "patient_id": pred.index,
+            "predicted_next_hba1c": pred.values,
+        }
+    )
     df = df.merge(ff.X[[last_col]], left_on="patient_id", right_index=True, how="left")
     df["last_hba1c"] = df[last_col]
     df["delta"] = df["predicted_next_hba1c"] - df["last_hba1c"]
@@ -109,8 +108,12 @@ def write_report(df: pd.DataFrame, out_dir: Path = HERE) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--top", type=int, default=50)
-    parser.add_argument("--threshold", type=float, default=6.0,
-                        help="Minimum last-observed HbA1c to consider for outreach")
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=6.0,
+        help="Minimum last-observed HbA1c to consider for outreach",
+    )
     args = parser.parse_args()
     df = build_cohort(top=args.top, threshold=args.threshold)
     write_report(df)

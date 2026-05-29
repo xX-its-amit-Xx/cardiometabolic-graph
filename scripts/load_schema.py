@@ -1,6 +1,5 @@
 """Load Neo4j schema constraints and indexes from cypher_constraints.cql."""
 
-import re
 import sys
 from pathlib import Path
 
@@ -38,12 +37,18 @@ def main() -> int:
             result = session.run("SHOW CONSTRAINTS YIELD name, type, labelsOrTypes, properties")
             print("\nActive constraints:")
             for record in result:
-                print(f"  {record['name']:30s} {record['type']:25s} {record['labelsOrTypes']} {record['properties']}")
+                print(
+                    f"  {record['name']:30s} {record['type']:25s} {record['labelsOrTypes']} {record['properties']}"
+                )
 
-            result = session.run("SHOW INDEXES YIELD name, type, labelsOrTypes, properties WHERE type <> 'LOOKUP'")
+            result = session.run(
+                "SHOW INDEXES YIELD name, type, labelsOrTypes, properties WHERE type <> 'LOOKUP'"
+            )
             print("\nActive indexes (non-LOOKUP):")
             for record in result:
-                print(f"  {record['name']:30s} {record['type']:15s} {record['labelsOrTypes']} {record['properties']}")
+                print(
+                    f"  {record['name']:30s} {record['type']:15s} {record['labelsOrTypes']} {record['properties']}"
+                )
     finally:
         driver.close()
     return 0

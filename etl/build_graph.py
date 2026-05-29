@@ -40,7 +40,9 @@ def apply_constraints(session) -> None:
         return
     log.info("applying constraints from %s", CYPHER_CONSTRAINTS)
     text_ = CYPHER_CONSTRAINTS.read_text(encoding="utf-8")
-    for stmt in [s.strip() for s in text_.split(";") if s.strip() and not s.strip().startswith("//")]:
+    for stmt in [
+        s.strip() for s in text_.split(";") if s.strip() and not s.strip().startswith("//")
+    ]:
         # also skip block comments
         if stmt.startswith("/*"):
             continue
@@ -48,6 +50,7 @@ def apply_constraints(session) -> None:
 
 
 # ---------- Patients & encounters from MIMIC ----------
+
 
 def write_patients(session, pg_engine, batch: int) -> int:
     sql = text("""
@@ -105,7 +108,9 @@ def write_encounters(session, pg_engine, batch: int) -> int:
     df["end_ts"] = pd.to_datetime(df["dischtime"]).dt.tz_localize("UTC").astype(str)
     df.loc[df["end_ts"] == "NaT", "end_ts"] = None
     df["encounter_type"] = df["admission_type"].fillna("UNKNOWN")
-    rows = df[["encounter_id", "patient_id", "start_ts", "end_ts", "encounter_type"]].to_dict("records")
+    rows = df[["encounter_id", "patient_id", "start_ts", "end_ts", "encounter_type"]].to_dict(
+        "records"
+    )
     total = 0
     for batch_rows in chunked(rows, batch):
         session.run(cypher, rows=batch_rows)
@@ -144,7 +149,9 @@ def write_labs(session, pg_engine, batch: int) -> int:
     df["patient_id"] = "MIMIC" + df["subject_id"].astype(str)
     df["encounter_id"] = df["hadm_id"].apply(lambda x: f"ENC{int(x)}" if pd.notna(x) else None)
     df["taken_ts"] = pd.to_datetime(df["charttime"]).dt.tz_localize("UTC").astype(str)
-    rows = df[["lab_id", "patient_id", "encounter_id", "loinc", "name", "value", "unit", "taken_ts"]].to_dict("records")
+    rows = df[
+        ["lab_id", "patient_id", "encounter_id", "loinc", "name", "value", "unit", "taken_ts"]
+    ].to_dict("records")
     total = 0
     for batch_rows in chunked(rows, batch):
         session.run(cypher, rows=batch_rows)
@@ -154,6 +161,7 @@ def write_labs(session, pg_engine, batch: int) -> int:
 
 
 # ---------- Behavioral events: synthetic engagement + NHANES ----------
+
 
 def write_synthetic_engagement(session, batch: int) -> int:
     path = synthetic_path() / "engagement_events.parquet"
@@ -200,11 +208,14 @@ def write_synthetic_engagement(session, batch: int) -> int:
 
 # ---------- Pathways, genes, metabolites ----------
 
+
 def write_pathways(session, pg_engine, batch: int) -> int:
     with pg_engine.connect() as conn:
         pdf = pd.read_sql(text("SELECT pathway_id, name, source FROM pathways.pathway"), conn)
         gdf = pd.read_sql(text("SELECT gene_symbol, pathway_id FROM pathways.gene_pathway"), conn)
-        mdf = pd.read_sql(text("SELECT chebi_id, pathway_id FROM pathways.metabolite_pathway"), conn)
+        mdf = pd.read_sql(
+            text("SELECT chebi_id, pathway_id FROM pathways.metabolite_pathway"), conn
+        )
         hdf = pd.read_sql(text("SELECT parent_id, child_id FROM pathways.pathway_hierarchy"), conn)
 
     if pdf.empty:

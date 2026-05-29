@@ -31,7 +31,9 @@ async def _capture(url: str = "http://127.0.0.1:8501/", preferred_pid: str | Non
                 try:
                     await page.locator("div[data-baseweb='select']").first.click()
                     await page.wait_for_timeout(500)
-                    await page.locator(f"li[role='option']:has-text('{preferred_pid}')").first.click()
+                    await page.locator(
+                        f"li[role='option']:has-text('{preferred_pid}')"
+                    ).first.click()
                     await page.wait_for_timeout(1500)
                 except Exception as exc:
                     print(f"WARN: could not select preferred PID {preferred_pid}: {exc}")
@@ -54,6 +56,7 @@ async def _capture(url: str = "http://127.0.0.1:8501/", preferred_pid: str | Non
 
 def main() -> int:
     import argparse
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pid", default=None, help="Patient ID to pre-select in the dashboard")
     parser.add_argument("--url", default="http://127.0.0.1:8501/")

@@ -20,6 +20,7 @@ import json
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -27,14 +28,15 @@ import pandas as pd
 from ._features import LAB_FEATURES, load_cached
 from .gnn_hba1c import train_gnn
 
-
 # Prefixes that identify lab-derived columns
 _LAB_PREFIXES = tuple(LAB_FEATURES)
 _ENGAGEMENT_PREFIXES = ("sum_", "count_", "ev_bucket_")
 
 
 def _is_lab_col(col: str) -> bool:
-    return any(col.startswith(p) or col.split("_")[0] in LAB_FEATURES for p in _LAB_PREFIXES)
+    return any(
+        col.startswith(p) or col.split("_", maxsplit=1)[0] in LAB_FEATURES for p in _LAB_PREFIXES
+    )
 
 
 def _is_engagement_col(col: str) -> bool:
@@ -78,8 +80,10 @@ def run_ablations(epochs: int = 30, seed: int = 42) -> dict[str, dict]:
         n_feat = tr_X.shape[1]
         print(f"    features used: {n_feat}")
         result = train_gnn(
-            tr_X, train.y_hba1c,
-            te_X, test.y_hba1c,
+            tr_X,
+            train.y_hba1c,
+            te_X,
+            test.y_hba1c,
             epochs=epochs,
             artifact_dir=f"artifacts/gnn/ablation_{name}",
         )
@@ -90,9 +94,11 @@ def run_ablations(epochs: int = 30, seed: int = 42) -> dict[str, dict]:
 
 
 def plot_ablations(results: dict[str, dict], out_path: Path) -> None:
-    labels = {"no_engagement": "No engagement\n(labs only)",
-               "no_labs": "No labs\n(engagement only)",
-               "full": "Full\n(all features)"}
+    labels = {
+        "no_engagement": "No engagement\n(labs only)",
+        "no_labs": "No labs\n(engagement only)",
+        "full": "Full\n(all features)",
+    }
     names = list(results.keys())
     r_vals = [results[n]["pearson_r"] for n in names]
     mae_vals = [results[n]["mae"] for n in names]
@@ -126,7 +132,9 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--out-fig", type=Path, default=Path("docs/figures/gnn_ablations.png"))
-    parser.add_argument("--out-json", type=Path, default=Path("artifacts/gnn/ablation_results.json"))
+    parser.add_argument(
+        "--out-json", type=Path, default=Path("artifacts/gnn/ablation_results.json")
+    )
     args = parser.parse_args()
 
     results = run_ablations(epochs=args.epochs, seed=args.seed)

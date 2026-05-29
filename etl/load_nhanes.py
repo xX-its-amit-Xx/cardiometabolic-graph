@@ -29,11 +29,17 @@ from sqlalchemy import create_engine, text
 from ._common import PostgresConfig, log, now_utc, raw_path
 
 TABLES = {
-    "DEMO_J":  {"vars": ["SEQN", "RIAGENDR", "RIDAGEYR", "RIDRETH3", "DMDEDUC2"], "domain": "demographics"},
-    "PAQ_J":   {"vars": ["SEQN", "PAQ605", "PAQ620", "PAQ650", "PAQ665"], "domain": "activity"},
-    "DR1TOT_J":{"vars": ["SEQN", "DR1TKCAL", "DR1TPROT", "DR1TCARB", "DR1TSUGR", "DR1TFIBE", "DR1TTFAT"], "domain": "diet"},
-    "SLQ_J":   {"vars": ["SEQN", "SLD012", "SLQ050"], "domain": "sleep"},
-    "SMQ_J":   {"vars": ["SEQN", "SMQ020", "SMQ040"], "domain": "smoking"},
+    "DEMO_J": {
+        "vars": ["SEQN", "RIAGENDR", "RIDAGEYR", "RIDRETH3", "DMDEDUC2"],
+        "domain": "demographics",
+    },
+    "PAQ_J": {"vars": ["SEQN", "PAQ605", "PAQ620", "PAQ650", "PAQ665"], "domain": "activity"},
+    "DR1TOT_J": {
+        "vars": ["SEQN", "DR1TKCAL", "DR1TPROT", "DR1TCARB", "DR1TSUGR", "DR1TFIBE", "DR1TTFAT"],
+        "domain": "diet",
+    },
+    "SLQ_J": {"vars": ["SEQN", "SLD012", "SLQ050"], "domain": "sleep"},
+    "SMQ_J": {"vars": ["SEQN", "SMQ020", "SMQ040"], "domain": "smoking"},
 }
 
 
@@ -81,7 +87,9 @@ def _upsert_respondents(engine, demo: pd.DataFrame) -> int:
     df = df.dropna(subset=["seqn"]).astype({"seqn": "int64"})
     df["ingested_at"] = now_utc()
 
-    df.to_sql("_stg_demo", engine, if_exists="replace", index=False, method="multi", chunksize=5_000)
+    df.to_sql(
+        "_stg_demo", engine, if_exists="replace", index=False, method="multi", chunksize=5_000
+    )
     with engine.begin() as conn:
         conn.execute(text("""
             INSERT INTO nhanes.respondents (seqn, gender, age_years, race_eth, education, ingested_at)
@@ -99,7 +107,9 @@ def _upsert_respondents(engine, demo: pd.DataFrame) -> int:
 
 
 def _upsert_events(engine, seqns: pd.Series, domain: str, df: pd.DataFrame) -> int:
-    long_df = df.melt(id_vars=["SEQN"], var_name="variable", value_name="value").dropna(subset=["value"])
+    long_df = df.melt(id_vars=["SEQN"], var_name="variable", value_name="value").dropna(
+        subset=["value"]
+    )
     long_df = long_df.rename(columns={"SEQN": "seqn"})
     long_df["seqn"] = long_df["seqn"].astype("int64")
     long_df = long_df[long_df["seqn"].isin(seqns)]
@@ -107,7 +117,9 @@ def _upsert_events(engine, seqns: pd.Series, domain: str, df: pd.DataFrame) -> i
 
     if long_df.empty:
         return 0
-    long_df.to_sql("_stg_events", engine, if_exists="replace", index=False, method="multi", chunksize=10_000)
+    long_df.to_sql(
+        "_stg_events", engine, if_exists="replace", index=False, method="multi", chunksize=10_000
+    )
     with engine.begin() as conn:
         conn.execute(text("""
             INSERT INTO nhanes.events (seqn, domain, variable, value)

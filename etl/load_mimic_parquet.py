@@ -21,12 +21,12 @@ import pandas as pd
 from ._common import log, processed_path, raw_path
 
 CARDIO_LOINC = {
-    "4548-4":  "HbA1c",
-    "2345-7":  "glucose_serum",
-    "2093-3":  "cholesterol_total",
-    "2085-9":  "hdl",
-    "2089-1":  "ldl",
-    "2571-8":  "triglycerides",
+    "4548-4": "HbA1c",
+    "2345-7": "glucose_serum",
+    "2093-3": "cholesterol_total",
+    "2085-9": "hdl",
+    "2089-1": "ldl",
+    "2571-8": "triglycerides",
 }
 
 # Direct itemid -> canonical-name map for MIMIC-IV demo (the demo's
@@ -34,14 +34,14 @@ CARDIO_LOINC = {
 # a hand-curated lookup that resolves the standard cardiometabolic panel.
 # Mapping verified against MIMIC-IV demo v2.2 / hosp/d_labitems.csv.gz.)
 CARDIO_ITEMID: dict[int, str] = {
-    50852: "HbA1c",              # % Hemoglobin A1c
-    50931: "glucose_serum",      # Glucose, Blood, Chemistry (serum)
-    52569: "glucose_serum",      # Glucose, Blood, Chemistry (alt)
+    50852: "HbA1c",  # % Hemoglobin A1c
+    50931: "glucose_serum",  # Glucose, Blood, Chemistry (serum)
+    52569: "glucose_serum",  # Glucose, Blood, Chemistry (alt)
     50907: "cholesterol_total",  # Cholesterol, Total
-    50904: "hdl",                # Cholesterol, HDL
-    50905: "ldl",                # Cholesterol, LDL, Calculated
-    50906: "ldl",                # Cholesterol, LDL, Measured
-    51000: "triglycerides",      # Triglycerides
+    50904: "hdl",  # Cholesterol, HDL
+    50905: "ldl",  # Cholesterol, LDL, Calculated
+    50906: "ldl",  # Cholesterol, LDL, Measured
+    51000: "triglycerides",  # Triglycerides
 }
 
 
@@ -108,12 +108,36 @@ def _load_labs(mimic_dir: Path) -> pd.DataFrame:
         )
         chunk["loinc"] = None  # demo d_labitems lacks LOINC; left null for traceability
         frames.append(
-            chunk[["lab_id", "patient_id", "encounter_id", "loinc", "name", "value", "unit", "taken_ts", "source_system"]]
+            chunk[
+                [
+                    "lab_id",
+                    "patient_id",
+                    "encounter_id",
+                    "loinc",
+                    "name",
+                    "value",
+                    "unit",
+                    "taken_ts",
+                    "source_system",
+                ]
+            ]
         )
 
     if not frames:
         log.warning("No cardiometabolic labs found in MIMIC demo — returning empty")
-        return pd.DataFrame(columns=["lab_id", "patient_id", "encounter_id", "loinc", "name", "value", "unit", "taken_ts", "source_system"])
+        return pd.DataFrame(
+            columns=[
+                "lab_id",
+                "patient_id",
+                "encounter_id",
+                "loinc",
+                "name",
+                "value",
+                "unit",
+                "taken_ts",
+                "source_system",
+            ]
+        )
     return pd.concat(frames, ignore_index=True)
 
 
@@ -121,8 +145,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mimic-dir", type=Path, default=raw_path() / "mimic-iv")
     parser.add_argument("--out-dir", type=Path, default=processed_path())
-    parser.add_argument("--merge-synthetic-labs", action="store_true",
-                        help="If set, append the synthetic labs parquet to the MIMIC labs output.")
+    parser.add_argument(
+        "--merge-synthetic-labs",
+        action="store_true",
+        help="If set, append the synthetic labs parquet to the MIMIC labs output.",
+    )
     args = parser.parse_args()
 
     if not args.mimic_dir.exists():
@@ -163,8 +190,12 @@ def main() -> None:
             synth_df["taken_ts"] = pd.to_datetime(synth_df["taken_ts"], utc=True, errors="coerce")
             combined = pd.concat([mimic_df, synth_df], ignore_index=True)
             combined.to_parquet(args.out_dir / "labs.parquet", index=False)
-            log.info("merged labs: %d rows (MIMIC %d + synthetic %d)",
-                     len(combined), len(mimic_df), len(synth_df))
+            log.info(
+                "merged labs: %d rows (MIMIC %d + synthetic %d)",
+                len(combined),
+                len(mimic_df),
+                len(synth_df),
+            )
             return
 
     labs.to_parquet(args.out_dir / "labs.parquet", index=False)

@@ -59,10 +59,8 @@ def _build_delta_targets() -> tuple[pd.Series, pd.Series]:
     # The feature builder holds out the LATEST visit as the target. We
     # want the SECOND-to-last (or first) as the "prior baseline" so the
     # delta is computed against pre-prediction history only.
-    prior_last = (
-        hba1c.groupby("patient_id")["value"].apply(
-            lambda s: float(s.iloc[-2]) if len(s) >= 2 else float(s.iloc[-1])
-        )
+    prior_last = hba1c.groupby("patient_id")["value"].apply(
+        lambda s: float(s.iloc[-2]) if len(s) >= 2 else float(s.iloc[-1])
     )
     y_full = pd.read_parquet(y_path)["y"]
     common = y_full.index.intersection(prior_last.index)
@@ -81,7 +79,7 @@ def train_delta(
     if ff is None:
         raise FileNotFoundError("No cached features. Run `make pipeline-parquet` first.")
 
-    delta, prior_last = _build_delta_targets()
+    delta, _prior_last = _build_delta_targets()
     common = ff.X.index.intersection(delta.index)
     X = ff.X.loc[common].copy()
     y = delta.loc[common].values
@@ -105,7 +103,8 @@ def train_delta(
         random_state=seed,
     )
     model.fit(
-        X_tr, y_tr,
+        X_tr,
+        y_tr,
         eval_set=[(X_te, y_te)],
         callbacks=[lgb.early_stopping(30, verbose=False), lgb.log_evaluation(0)],
     )
@@ -120,12 +119,12 @@ def train_delta(
     )
 
     res = DeltaResult(
-        pearson_r=float(r), mae=float(mae),
-        n_train=len(X_tr), n_test=len(X_te),
+        pearson_r=float(r),
+        mae=float(mae),
+        n_train=len(X_tr),
+        n_test=len(X_te),
     )
-    (artifact_dir / "delta_hba1c_result.json").write_text(
-        json.dumps(asdict(res), indent=2)
-    )
+    (artifact_dir / "delta_hba1c_result.json").write_text(json.dumps(asdict(res), indent=2))
     log.info("delta GBM -> Pearson r=%.3f, MAE=%.3f", res.pearson_r, res.mae)
     return res
 

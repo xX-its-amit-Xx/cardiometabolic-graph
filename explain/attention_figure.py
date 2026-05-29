@@ -15,6 +15,7 @@ import argparse
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -22,17 +23,17 @@ import torch
 
 from explain.graph_attention_attribution import attribute
 from models._features import load_cached
-from models.gnn_hba1c import HbA1cGNN, PYG_AVAILABLE
+from models.gnn_hba1c import PYG_AVAILABLE, HbA1cGNN
 
 
 def _build_named_subgraph(row: pd.Series, y_val: float):
     """Star graph with a feature-name index alongside the Data object."""
     if not PYG_AVAILABLE:
         raise ImportError("torch_geometric required")
-    from torch_geometric.data import Data  # noqa: PLC0415
+    from torch_geometric.data import Data
 
     nonzero = row[row != 0].astype(float)
-    feat_names = ["patient_root"] + nonzero.index.tolist()
+    feat_names = ["patient_root", *nonzero.index.tolist()]
     n_satellites = len(nonzero)
     feature_dim = 1
 
@@ -75,7 +76,6 @@ def generate_attention_figure(
     y_val = float(ff.y_hba1c.loc[patient_id])
     data, feat_names = _build_named_subgraph(row, y_val)
 
-    n_nodes = data.x.size(0)
     model = HbA1cGNN(in_dim=1, hidden=64)
     state = torch.load(model_path, map_location="cpu", weights_only=True)
     model.load_state_dict(state)
@@ -99,9 +99,14 @@ def generate_attention_figure(
     bars = ax.barh(top["edge_label"][::-1], top["weight"][::-1], color=colors[::-1])
     ax.set_xlabel("Aggregated attention weight (GAT layers 1+2)")
     ax.set_title(f"GNN attention attribution — patient {patient_id}")
-    for bar, val in zip(bars, top["weight"][::-1]):
-        ax.text(bar.get_width() + 0.002, bar.get_y() + bar.get_height() / 2,
-                f"{val:.3f}", va="center", fontsize=8)
+    for bar, val in zip(bars, top["weight"][::-1], strict=False):
+        ax.text(
+            bar.get_width() + 0.002,
+            bar.get_y() + bar.get_height() / 2,
+            f"{val:.3f}",
+            va="center",
+            fontsize=8,
+        )
     ax.set_xlim(0, top["weight"].max() * 1.25)
     fig.tight_layout()
 

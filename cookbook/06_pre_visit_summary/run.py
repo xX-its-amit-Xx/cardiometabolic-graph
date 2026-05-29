@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
 
 from etl._common import log, processed_path, synthetic_path
 from summarizer import PatientFacts, SummaryRequest, get_summarizer
-
 
 HERE = Path(__file__).resolve().parent
 
@@ -80,15 +79,23 @@ def _questions_to_ask(f: PatientFacts) -> list[str]:
     qs: list[str] = []
     if f.last_hba1c is not None and f.pred_hba1c_next is not None:
         if f.pred_hba1c_next - f.last_hba1c > 0.3:
-            qs.append("Predicted HbA1c rise — ask about recent diet, stress, or medication adherence changes.")
+            qs.append(
+                "Predicted HbA1c rise — ask about recent diet, stress, or medication adherence changes."
+            )
         elif f.last_hba1c - f.pred_hba1c_next > 0.3:
-            qs.append("Predicted HbA1c improvement — affirm the patient's current self-management strategy.")
+            qs.append(
+                "Predicted HbA1c improvement — affirm the patient's current self-management strategy."
+            )
     if f.last_ldl is not None and f.last_ldl >= 130:
         qs.append(f"LDL {f.last_ldl:.0f} mg/dL — discuss statin adherence and side effects.")
     if f.dropout_risk is not None and f.dropout_risk >= 0.40:
-        qs.append(f"Dropout risk {f.dropout_risk:.0%} — explore barriers to app engagement (time? friction? value?).")
+        qs.append(
+            f"Dropout risk {f.dropout_risk:.0%} — explore barriers to app engagement (time? friction? value?)."
+        )
     if f.glucose_logs_30d == 0 and (f.last_hba1c or 0) >= 7.0:
-        qs.append("Zero glucose logs in last 30 days despite elevated HbA1c — consider a CGM trial.")
+        qs.append(
+            "Zero glucose logs in last 30 days despite elevated HbA1c — consider a CGM trial."
+        )
     if not qs:
         qs.append("Routine follow-up — confirm med list and refill timing.")
     return qs
@@ -97,7 +104,7 @@ def _questions_to_ask(f: PatientFacts) -> list[str]:
 def build_worklist(pids: list[str], audience: str = "clinician") -> str:
     summarizer = get_summarizer()
     lines: list[str] = []
-    today = datetime.now(timezone.utc).date().isoformat()
+    today = datetime.now(UTC).date().isoformat()
     lines.append(f"# Pre-visit worklist — {today}")
     lines.append("")
     lines.append(f"_Audience: {audience} • Summarizer: `{summarizer.name}`_")
@@ -109,9 +116,7 @@ def build_worklist(pids: list[str], audience: str = "clinician") -> str:
         if facts is None:
             lines.append(f"## `{pid}` — _data unavailable_\n")
             continue
-        summary = summarizer.summarize(
-            SummaryRequest(facts=facts, audience=audience, max_words=80)
-        )
+        summary = summarizer.summarize(SummaryRequest(facts=facts, audience=audience, max_words=80))
         qs = _questions_to_ask(facts)
         lines.append(f"## `{pid}`")
         lines.append("")
@@ -146,12 +151,18 @@ def _top_by_delta(top_n: int) -> list[str]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--patients", nargs="*", default=None,
-                        help="Explicit patient IDs. If omitted, uses --top.")
-    parser.add_argument("--top", type=int, default=5,
-                        help="If --patients not given, take top N by predicted HbA1c rise.")
-    parser.add_argument("--audience", choices=("clinician", "patient", "care_coordinator"),
-                        default="clinician")
+    parser.add_argument(
+        "--patients", nargs="*", default=None, help="Explicit patient IDs. If omitted, uses --top."
+    )
+    parser.add_argument(
+        "--top",
+        type=int,
+        default=5,
+        help="If --patients not given, take top N by predicted HbA1c rise.",
+    )
+    parser.add_argument(
+        "--audience", choices=("clinician", "patient", "care_coordinator"), default="clinician"
+    )
     args = parser.parse_args()
 
     pids = args.patients or _top_by_delta(args.top)
@@ -159,7 +170,7 @@ def main() -> None:
         raise SystemExit("No patients available. Run `make pipeline-parquet` first.")
 
     body = build_worklist(pids, audience=args.audience)
-    out = HERE / f"pre_visit_{datetime.now(timezone.utc).date().isoformat()}_{args.audience}.md"
+    out = HERE / f"pre_visit_{datetime.now(UTC).date().isoformat()}_{args.audience}.md"
     out.write_text(body, encoding="utf-8")
     log.info("wrote pre-visit worklist (%d patients) -> %s", len(pids), out)
 

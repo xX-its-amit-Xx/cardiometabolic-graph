@@ -68,6 +68,7 @@ def test_constraints_applied_in_neo4j():
     if not os.getenv("NEO4J_URI"):
         pytest.skip("NEO4J_URI not configured")
     from etl._common import neo4j_session
+
     with neo4j_session() as session:
         result = session.run("SHOW CONSTRAINTS").data()
         names = {row.get("name", "") for row in result}

@@ -91,8 +91,8 @@ def calibrate(
     n_test = int(n * test_frac)
     n_cal = int(n * cal_frac)
     test_idx = idx[:n_test]
-    cal_idx = idx[n_test:n_test + n_cal]
-    tr_idx = idx[n_test + n_cal:]
+    cal_idx = idx[n_test : n_test + n_cal]
+    tr_idx = idx[n_test + n_cal :]
 
     X_tr, X_cal, X_te = X.iloc[tr_idx], X.iloc[cal_idx], X.iloc[test_idx]
     y_tr, y_cal, y_te = y[tr_idx], y[cal_idx], y[test_idx]
@@ -107,7 +107,8 @@ def calibrate(
         random_state=seed,
     )
     model.fit(
-        X_tr, y_tr,
+        X_tr,
+        y_tr,
         eval_set=[(X_cal, y_cal)],
         callbacks=[lgb.early_stopping(30, verbose=False), lgb.log_evaluation(0)],
     )
@@ -123,7 +124,11 @@ def calibrate(
 
     auroc_b = float(roc_auc_score(y_te, p_test_raw)) if len(np.unique(y_te)) > 1 else float("nan")
     auroc_a = float(roc_auc_score(y_te, p_test_cal)) if len(np.unique(y_te)) > 1 else float("nan")
-    auprc_a = float(average_precision_score(y_te, p_test_cal)) if len(np.unique(y_te)) > 1 else float("nan")
+    auprc_a = (
+        float(average_precision_score(y_te, p_test_cal))
+        if len(np.unique(y_te)) > 1
+        else float("nan")
+    )
     brier_b = float(brier_score_loss(y_te, p_test_raw))
     brier_a = float(brier_score_loss(y_te, p_test_cal))
     ece_b = _ece(y_te, p_test_raw)
@@ -141,16 +146,27 @@ def calibrate(
     )
 
     result = CalibrationResult(
-        auroc_before=auroc_b, auroc_after=auroc_a, auprc_after=auprc_a,
-        brier_before=brier_b, brier_after=brier_a,
-        ece_before=ece_b, ece_after=ece_a,
-        n_train=len(X_tr), n_cal=len(X_cal), n_test=len(X_te),
+        auroc_before=auroc_b,
+        auroc_after=auroc_a,
+        auprc_after=auprc_a,
+        brier_before=brier_b,
+        brier_after=brier_a,
+        ece_before=ece_b,
+        ece_after=ece_a,
+        n_train=len(X_tr),
+        n_cal=len(X_cal),
+        n_test=len(X_te),
     )
     (artifact_dir / "dropout_result.json").write_text(json.dumps(asdict(result), indent=2))
 
     log.info(
         "calibration — AUROC %.3f -> %.3f, Brier %.3f -> %.3f, ECE %.3f -> %.3f",
-        auroc_b, auroc_a, brier_b, brier_a, ece_b, ece_a,
+        auroc_b,
+        auroc_a,
+        brier_b,
+        brier_a,
+        ece_b,
+        ece_a,
     )
     return result
 

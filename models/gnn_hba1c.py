@@ -27,6 +27,7 @@ try:
     from torch_geometric.data import Data
     from torch_geometric.loader import DataLoader
     from torch_geometric.nn import GATv2Conv, global_mean_pool
+
     PYG_AVAILABLE = True
 except ImportError:  # PyG is a heavy install; allow tests to import this module without it
     PYG_AVAILABLE = False
@@ -59,7 +60,9 @@ class HbA1cGNN(nn.Module):
             nn.Linear(hidden, 1),
         )
 
-    def forward(self, x: torch.Tensor, edge_index: torch.Tensor, batch: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, edge_index: torch.Tensor, batch: torch.Tensor
+    ) -> torch.Tensor:
         h, (ei1, alpha1) = self.conv1(x, edge_index, return_attention_weights=True)
         h = F.elu(h)
         h, (ei2, alpha2) = self.conv2(h, edge_index, return_attention_weights=True)
@@ -92,13 +95,17 @@ def _features_to_subgraphs(X: pd.DataFrame, y: pd.Series) -> list[Data]:
             edge_index = torch.empty((2, 0), dtype=torch.long)
         else:
             patient_feat = torch.tensor([[float(nonzero.mean())]], dtype=torch.float)
-            sat_feats = torch.tensor(nonzero.to_numpy(dtype=float).reshape(-1, 1), dtype=torch.float)
+            sat_feats = torch.tensor(
+                nonzero.to_numpy(dtype=float).reshape(-1, 1), dtype=torch.float
+            )
             x = torch.cat([patient_feat, sat_feats], dim=0)
             src = torch.arange(1, n_satellites + 1)
             dst = torch.zeros(n_satellites, dtype=torch.long)
             # undirected
             edge_index = torch.stack([torch.cat([src, dst]), torch.cat([dst, src])], dim=0)
-        data = Data(x=x, edge_index=edge_index, y=torch.tensor([float(y.loc[pid])], dtype=torch.float))
+        data = Data(
+            x=x, edge_index=edge_index, y=torch.tensor([float(y.loc[pid])], dtype=torch.float)
+        )
         data.patient_id = pid
         datasets.append(data)
     return datasets
@@ -132,7 +139,7 @@ def train_gnn(
     optim = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     loss_fn = nn.SmoothL1Loss()
 
-    for epoch in range(epochs):
+    for _epoch in range(epochs):
         model.train()
         for batch in train_loader:
             batch = batch.to(device)
@@ -163,9 +170,12 @@ def train_gnn(
     )
 
     result = GNNResult(
-        pearson_r=float(r), mae=float(mae),
-        n_train=len(train_set), n_test=len(test_set),
-        epochs=epochs, hidden_dim=hidden,
+        pearson_r=float(r),
+        mae=float(mae),
+        n_train=len(train_set),
+        n_test=len(test_set),
+        epochs=epochs,
+        hidden_dim=hidden,
     )
     (artifact_dir / "gnn_hba1c_result.json").write_text(json.dumps(asdict(result), indent=2))
     return result

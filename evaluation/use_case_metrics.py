@@ -41,18 +41,25 @@ from .metrics import (
 class MetricResult:
     use_case: str
     metric: str
-    metric_key: str        # key into RANGES
+    metric_key: str  # key into RANGES
     value: float
     grade: str
     hint: str
     detail: str = ""
 
     @classmethod
-    def from_value(cls, use_case: str, metric: str, metric_key: str, value: float, detail: str = "") -> "MetricResult":
+    def from_value(
+        cls, use_case: str, metric: str, metric_key: str, value: float, detail: str = ""
+    ) -> MetricResult:
         g, hint = grade(metric_key, value)
         return cls(
-            use_case=use_case, metric=metric, metric_key=metric_key,
-            value=value, grade=g, hint=hint, detail=detail,
+            use_case=use_case,
+            metric=metric,
+            metric_key=metric_key,
+            value=value,
+            grade=g,
+            hint=hint,
+            detail=detail,
         )
 
 
@@ -78,6 +85,7 @@ def _load_artifacts() -> dict:
 
 
 # --- 01 At-risk cohort ----------------------------------------------------
+
 
 def evaluate_at_risk_cohort(art: dict, k: int = 50) -> list[MetricResult]:
     """At-risk cohort = "do the top-K patients by predicted HbA1c rise
@@ -105,16 +113,32 @@ def evaluate_at_risk_cohort(art: dict, k: int = 50) -> list[MetricResult]:
     capture = capture_at_topk(scores, relevance, k=k)
 
     return [
-        MetricResult.from_value("01_at_risk_cohort", f"NDCG@{k}", "ndcg", ndcg,
-                                "ranking quality of the predicted-rise score"),
-        MetricResult.from_value("01_at_risk_cohort", f"Lift@{k}", "lift", lift,
-                                f"top {k} vs random — base rate {relevance.mean():.0%}"),
-        MetricResult.from_value("01_at_risk_cohort", f"Capture@{k}", "capture", capture,
-                                f"share of true risers (top quartile) caught in top {k}"),
+        MetricResult.from_value(
+            "01_at_risk_cohort",
+            f"NDCG@{k}",
+            "ndcg",
+            ndcg,
+            "ranking quality of the predicted-rise score",
+        ),
+        MetricResult.from_value(
+            "01_at_risk_cohort",
+            f"Lift@{k}",
+            "lift",
+            lift,
+            f"top {k} vs random — base rate {relevance.mean():.0%}",
+        ),
+        MetricResult.from_value(
+            "01_at_risk_cohort",
+            f"Capture@{k}",
+            "capture",
+            capture,
+            f"share of true risers (top quartile) caught in top {k}",
+        ),
     ]
 
 
 # --- 02 Re-engagement outreach --------------------------------------------
+
 
 def evaluate_reengagement(art: dict, k: int = 50) -> list[MetricResult]:
     """Dropout classifier directly powers this cookbook — reuse AUROC,
@@ -122,7 +146,9 @@ def evaluate_reengagement(art: dict, k: int = 50) -> list[MetricResult]:
     pred = art["dropout_pred"]
     if pred is None or art["y_dropout"] is None or art["features"] is None:
         return []
-    y_full = art["y_dropout"]["y"] if isinstance(art["y_dropout"], pd.DataFrame) else art["y_dropout"]
+    y_full = (
+        art["y_dropout"]["y"] if isinstance(art["y_dropout"], pd.DataFrame) else art["y_dropout"]
+    )
     p = pred["p_dropout"]
     common = p.index.intersection(y_full.index)
     p = p.loc[common].values
@@ -139,33 +165,65 @@ def evaluate_reengagement(art: dict, k: int = 50) -> list[MetricResult]:
     op = precision_recall_at_threshold(y, p, threshold=0.5)
 
     return [
-        MetricResult.from_value("02_reengagement_outreach", "AUROC", "auroc", auroc,
-                                "discrimination of dropout vs. continued engagement"),
-        MetricResult.from_value("02_reengagement_outreach", "AUPRC", "auprc", auprc,
-                                f"AUPRC vs base rate {y.mean():.0%}"),
-        MetricResult.from_value("02_reengagement_outreach", "Brier", "brier", brier,
-                                "probability-MSE (lower is better)"),
-        MetricResult.from_value("02_reengagement_outreach", "ECE", "ece", ece,
-                                "expected calibration error over 10 deciles"),
-        MetricResult.from_value("02_reengagement_outreach", f"Lift@{k}", "lift", lift,
-                                "outreach efficiency vs uniform sampling"),
-        MetricResult.from_value("02_reengagement_outreach", f"Capture@{k}", "capture", capture,
-                                "share of true dropouts reached"),
-        MetricResult.from_value("02_reengagement_outreach", "Precision@0.5", "auprc", op.precision,
-                                f"{op.n_called} flagged at threshold 0.5 (sens={op.recall:.2f}, spec={op.specificity:.2f})"),
+        MetricResult.from_value(
+            "02_reengagement_outreach",
+            "AUROC",
+            "auroc",
+            auroc,
+            "discrimination of dropout vs. continued engagement",
+        ),
+        MetricResult.from_value(
+            "02_reengagement_outreach",
+            "AUPRC",
+            "auprc",
+            auprc,
+            f"AUPRC vs base rate {y.mean():.0%}",
+        ),
+        MetricResult.from_value(
+            "02_reengagement_outreach", "Brier", "brier", brier, "probability-MSE (lower is better)"
+        ),
+        MetricResult.from_value(
+            "02_reengagement_outreach",
+            "ECE",
+            "ece",
+            ece,
+            "expected calibration error over 10 deciles",
+        ),
+        MetricResult.from_value(
+            "02_reengagement_outreach",
+            f"Lift@{k}",
+            "lift",
+            lift,
+            "outreach efficiency vs uniform sampling",
+        ),
+        MetricResult.from_value(
+            "02_reengagement_outreach",
+            f"Capture@{k}",
+            "capture",
+            capture,
+            "share of true dropouts reached",
+        ),
+        MetricResult.from_value(
+            "02_reengagement_outreach",
+            "Precision@0.5",
+            "auprc",
+            op.precision,
+            f"{op.n_called} flagged at threshold 0.5 (sens={op.recall:.2f}, spec={op.specificity:.2f})",
+        ),
     ]
 
 
 # --- 03 Pathway-anchored explanation --------------------------------------
 
+
 def evaluate_explanation_quality(art: dict) -> list[MetricResult]:
     """Two structural checks for the evidence trail:
 
-      * Pathway-coverage: fraction of top-5 SHAP features that map to a
-        curated Reactome pathway citation.
-      * SHAP non-degeneracy: at least 5 features above an
-        absolute-impact noise floor (filters out the "everything is
-        zero" degenerate case).
+    * Pathway-coverage: fraction of top-5 SHAP features that map to a
+      curated Reactome pathway citation.
+    * SHAP non-degeneracy: at least 5 features above an
+      absolute-impact noise floor (filters out the "everything is
+      zero" degenerate case).
     """
     shap = art["shap"]
     if shap is None or shap.empty:
@@ -177,8 +235,14 @@ def evaluate_explanation_quality(art: dict) -> list[MetricResult]:
 
     # Curated pathway map mirrors cookbook 03
     pathway_map = {
-        "HbA1c", "glucose_serum", "cholesterol_total", "ldl", "hdl", "triglycerides",
+        "HbA1c",
+        "glucose_serum",
+        "cholesterol_total",
+        "ldl",
+        "hdl",
+        "triglycerides",
     }
+
     def _base(f: str) -> str:
         for s in ("_last", "_mean", "_min", "_max", "_n"):
             if f.endswith(s):
@@ -192,18 +256,24 @@ def evaluate_explanation_quality(art: dict) -> list[MetricResult]:
 
     return [
         MetricResult.from_value(
-            "03_pathway_anchored_explanation", "Pathway coverage of top-5 SHAP", "completeness",
-            coverage, "fraction of top global features that map to a Reactome pathway",
+            "03_pathway_anchored_explanation",
+            "Pathway coverage of top-5 SHAP",
+            "completeness",
+            coverage,
+            "fraction of top global features that map to a Reactome pathway",
         ),
         MetricResult.from_value(
-            "03_pathway_anchored_explanation", "Non-degenerate features",
-            "completeness", min(nonzero_count / 5.0, 1.0),
+            "03_pathway_anchored_explanation",
+            "Non-degenerate features",
+            "completeness",
+            min(nonzero_count / 5.0, 1.0),
             f"{nonzero_count} features carry meaningful mean(|SHAP|)",
         ),
     ]
 
 
 # --- 04 Cohort drift monitor ----------------------------------------------
+
 
 def evaluate_drift_detector(art: dict) -> list[MetricResult]:
     """Two-part drift evaluation:
@@ -260,20 +330,26 @@ def evaluate_drift_detector(art: dict) -> list[MetricResult]:
     sens_result = MetricResult(
         use_case="04_cohort_drift_monitor",
         metric="PSI sensitivity (+30% population shift)",
-        metric_key="psi", value=psi_shift, grade=g_sens, hint=hint_sens,
+        metric_key="psi",
+        value=psi_shift,
+        grade=g_sens,
+        hint=hint_sens,
         detail="should exceed alarm threshold 0.2",
     )
     return [
         sens_result,
         MetricResult.from_value(
-            "04_cohort_drift_monitor", "PSI specificity (no-change control)",
-            "psi", psi_null,
+            "04_cohort_drift_monitor",
+            "PSI specificity (no-change control)",
+            "psi",
+            psi_null,
             "PSI on identical distribution — should be ~0 (false-alarm rate)",
         ),
     ]
 
 
 # --- 05 Prior-auth note ---------------------------------------------------
+
 
 def evaluate_pa_note(art: dict) -> list[MetricResult]:
     """Structural completeness — every required PA section present in the
@@ -285,14 +361,21 @@ def evaluate_pa_note(art: dict) -> list[MetricResult]:
         return []
     text = notes[-1].read_text(encoding="utf-8")
     required = [
-        "## Clinical narrative", "## Metric table", "## Prior therapies attempted",
-        "## Attestation", "**Generated:**", "**Requested therapy:**",
+        "## Clinical narrative",
+        "## Metric table",
+        "## Prior therapies attempted",
+        "## Attestation",
+        "**Generated:**",
+        "**Requested therapy:**",
     ]
     present = sum(1 for r in required if r in text)
     coverage = present / len(required)
     return [
         MetricResult.from_value(
-            "05_prior_auth_note", "PA template completeness", "completeness", coverage,
+            "05_prior_auth_note",
+            "PA template completeness",
+            "completeness",
+            coverage,
             f"{present}/{len(required)} required sections present in {notes[-1].name}",
         ),
     ]
@@ -300,11 +383,12 @@ def evaluate_pa_note(art: dict) -> list[MetricResult]:
 
 # --- 06 Pre-visit summary -------------------------------------------------
 
+
 def evaluate_pre_visit_summary(art: dict) -> list[MetricResult]:
     """Two structural checks on the latest worklist:
-      * Every patient block has at least one "Questions to ask" bullet.
-      * Coverage of recommended-question types (the 4 trigger rules in
-        cookbook/06_pre_visit_summary/run.py)."""
+    * Every patient block has at least one "Questions to ask" bullet.
+    * Coverage of recommended-question types (the 4 trigger rules in
+      cookbook/06_pre_visit_summary/run.py)."""
     files = sorted(Path("cookbook/06_pre_visit_summary").glob("pre_visit_*.md"))
     if not files:
         return []
@@ -314,17 +398,23 @@ def evaluate_pre_visit_summary(art: dict) -> list[MetricResult]:
     if not sections:
         return []
     completeness = sum(
-        1 for s in sections if "**Questions to ask:**" in s and "-" in s.split("**Questions to ask:**", 1)[1]
+        1
+        for s in sections
+        if "**Questions to ask:**" in s and "-" in s.split("**Questions to ask:**", 1)[1]
     ) / len(sections)
     return [
         MetricResult.from_value(
-            "06_pre_visit_summary", "Questions present per patient", "completeness",
-            completeness, f"{len(sections)} patient blocks in {files[-1].name}",
+            "06_pre_visit_summary",
+            "Questions present per patient",
+            "completeness",
+            completeness,
+            f"{len(sections)} patient blocks in {files[-1].name}",
         ),
     ]
 
 
 # --- 07 Trial eligibility helpers ----------------------------------------
+
 
 def _eligibility_inputs() -> tuple[pd.DataFrame | None, set[str] | None]:
     """Compute the gold-standard eligibility set and per-patient
@@ -359,6 +449,7 @@ def _eligibility_inputs() -> tuple[pd.DataFrame | None, set[str] | None]:
         ("triglycerides_last", "<=", 500.0),
         ("app_open_count_30d", ">=", 5.0),
     ]
+
     def _ok(value, op, th):
         if value is None or pd.isna(value):
             return False
@@ -373,18 +464,21 @@ def _eligibility_inputs() -> tuple[pd.DataFrame | None, set[str] | None]:
     rows = []
     for pid, row in feats.iterrows():
         met = sum(int(_ok(row.get(f), op, th)) for f, op, th in spec)
-        rows.append({
-            "patient_id": pid,
-            "n_criteria_met": met,
-            "engagement_score": float(row.get("app_open_count_30d", 0.0) or 0.0),
-            "all_met": met == len(spec),
-        })
+        rows.append(
+            {
+                "patient_id": pid,
+                "n_criteria_met": met,
+                "engagement_score": float(row.get("app_open_count_30d", 0.0) or 0.0),
+                "all_met": met == len(spec),
+            }
+        )
     df = pd.DataFrame(rows).set_index("patient_id")
     gold = set(df[df["all_met"]].index)
     return df, gold
 
 
 # --- 07 Trial eligibility -------------------------------------------------
+
 
 def evaluate_eligibility(art: dict, top_n: int = 20) -> list[MetricResult]:
     """Eligibility-ranker metrics graded against the rule-derived gold standard.
@@ -423,22 +517,31 @@ def evaluate_eligibility(art: dict, top_n: int = 20) -> list[MetricResult]:
 
     return [
         MetricResult.from_value(
-            "07_trial_eligibility", f"Precision@top{top_n}", "completeness", precision,
-            f"{tp_topn}/{top_n} top candidates are gold-standard eligible "
-            f"(|gold|={budget})",
+            "07_trial_eligibility",
+            f"Precision@top{top_n}",
+            "completeness",
+            precision,
+            f"{tp_topn}/{top_n} top candidates are gold-standard eligible " f"(|gold|={budget})",
         ),
         MetricResult.from_value(
-            "07_trial_eligibility", f"Capture@top{budget}", "capture", capture_at_budget,
+            "07_trial_eligibility",
+            f"Capture@top{budget}",
+            "capture",
+            capture_at_budget,
             f"share of gold caught when budget matches |gold|={budget}",
         ),
         MetricResult.from_value(
-            "07_trial_eligibility", f"Specificity@top{top_n}", "specificity", specificity,
+            "07_trial_eligibility",
+            f"Specificity@top{top_n}",
+            "specificity",
+            specificity,
             f"{tn_topn}/{tn_topn + fp_topn} non-eligibles correctly excluded",
         ),
     ]
 
 
 # --- 08 Pharmacist intervention -------------------------------------------
+
 
 def evaluate_pharmacist(art: dict, k: int = 30) -> list[MetricResult]:
     """Pharmacist leverage = predicting CHANGE, not LEVEL.
@@ -489,17 +592,23 @@ def evaluate_pharmacist(art: dict, k: int = 30) -> list[MetricResult]:
 
     return [
         MetricResult.from_value(
-            "08_pharmacist_intervention", f"NDCG@{k}", "ndcg",
+            "08_pharmacist_intervention",
+            f"NDCG@{k}",
+            "ndcg",
             ndcg_at_k(delta_pred.values, delta_actual.values.astype(float), k),
             f"ranking quality of {score_label}",
         ),
         MetricResult.from_value(
-            "08_pharmacist_intervention", f"Lift@{k}", "lift",
+            "08_pharmacist_intervention",
+            f"Lift@{k}",
+            "lift",
             lift_at_topk(delta_pred.values, relevance, k),
             f"top {k} vs random — base rate {relevance.mean():.0%}",
         ),
         MetricResult.from_value(
-            "08_pharmacist_intervention", f"Capture@{k}", "capture",
+            "08_pharmacist_intervention",
+            f"Capture@{k}",
+            "capture",
             capture_at_topk(delta_pred.values, relevance, k),
             f"share of true risers (top quartile) reached using {score_label}",
         ),
@@ -507,6 +616,7 @@ def evaluate_pharmacist(art: dict, k: int = 30) -> list[MetricResult]:
 
 
 # --- Model-level metrics (shared backbone of multiple cookbooks) ----------
+
 
 def evaluate_models(art: dict) -> list[MetricResult]:
     """The two trained models that power most cookbooks."""
@@ -517,25 +627,56 @@ def evaluate_models(art: dict) -> list[MetricResult]:
         p = art["gbm_pred"].loc[common]["pred"].values
         ytrue = y.loc[common].values
         m = regression_metrics(ytrue, p)
-        res.append(MetricResult.from_value("model_hba1c_gbm", "Pearson r", "pearson_r_hba1c",
-                                            m["pearson_r"], "vs held-out HbA1c"))
-        res.append(MetricResult.from_value("model_hba1c_gbm", "MAE (%)", "mae_hba1c",
-                                            m["mae"], f"R^2={m['r2']:.3f}"))
+        res.append(
+            MetricResult.from_value(
+                "model_hba1c_gbm",
+                "Pearson r",
+                "pearson_r_hba1c",
+                m["pearson_r"],
+                "vs held-out HbA1c",
+            )
+        )
+        res.append(
+            MetricResult.from_value(
+                "model_hba1c_gbm", "MAE (%)", "mae_hba1c", m["mae"], f"R^2={m['r2']:.3f}"
+            )
+        )
 
     if art["dropout_pred"] is not None and art["y_dropout"] is not None:
-        y = art["y_dropout"]["y"] if isinstance(art["y_dropout"], pd.DataFrame) else art["y_dropout"]
+        y = (
+            art["y_dropout"]["y"]
+            if isinstance(art["y_dropout"], pd.DataFrame)
+            else art["y_dropout"]
+        )
         common = art["dropout_pred"].index.intersection(y.index)
         p = art["dropout_pred"].loc[common]["p_dropout"].values
         ytrue = y.loc[common].values
         if len(np.unique(ytrue)) >= 2:
             auroc, auprc = auc_pair(ytrue, p)
-            res.append(MetricResult.from_value("model_dropout_gbm", "AUROC", "auroc", auroc, "discrimination"))
-            res.append(MetricResult.from_value("model_dropout_gbm", "AUPRC", "auprc", auprc,
-                                                f"base rate {ytrue.mean():.0%}"))
-            res.append(MetricResult.from_value("model_dropout_gbm", "Brier", "brier",
-                                                brier_score(ytrue, p), "probability MSE"))
-            res.append(MetricResult.from_value("model_dropout_gbm", "ECE", "ece",
-                                                expected_calibration_error(ytrue, p), "expected calibration error"))
+            res.append(
+                MetricResult.from_value(
+                    "model_dropout_gbm", "AUROC", "auroc", auroc, "discrimination"
+                )
+            )
+            res.append(
+                MetricResult.from_value(
+                    "model_dropout_gbm", "AUPRC", "auprc", auprc, f"base rate {ytrue.mean():.0%}"
+                )
+            )
+            res.append(
+                MetricResult.from_value(
+                    "model_dropout_gbm", "Brier", "brier", brier_score(ytrue, p), "probability MSE"
+                )
+            )
+            res.append(
+                MetricResult.from_value(
+                    "model_dropout_gbm",
+                    "ECE",
+                    "ece",
+                    expected_calibration_error(ytrue, p),
+                    "expected calibration error",
+                )
+            )
     return res
 
 

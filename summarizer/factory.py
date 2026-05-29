@@ -26,10 +26,12 @@ def get_summarizer(name: str | None = None) -> Summarizer:
 
     if chosen == "ollama":
         from .ollama import OllamaBackend
+
         return OllamaBackend()
 
     if chosen == "transformers":
         from .transformers import TransformersBackend
+
         return TransformersBackend()
 
     return DeterministicBackend()

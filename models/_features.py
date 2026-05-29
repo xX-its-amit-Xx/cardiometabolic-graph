@@ -15,7 +15,6 @@ import pandas as pd
 
 from etl._common import log, processed_path
 
-
 LAB_FEATURES = ["HbA1c", "glucose_serum", "cholesterol_total", "hdl", "ldl", "triglycerides"]
 
 
@@ -23,20 +22,30 @@ LAB_FEATURES = ["HbA1c", "glucose_serum", "cholesterol_total", "hdl", "ldl", "tr
 class FeatureFrame:
     """Wide-format per-patient feature matrix + targets."""
 
-    X: pd.DataFrame                 # patient-level features
-    y_hba1c: pd.Series              # next-window HbA1c (regression)
-    y_dropout: pd.Series            # 1 = patient dropped out in next 30 days
+    X: pd.DataFrame  # patient-level features
+    y_hba1c: pd.Series  # next-window HbA1c (regression)
+    y_dropout: pd.Series  # 1 = patient dropped out in next 30 days
     patient_ids: pd.Index
 
-    def split(self, test_frac: float = 0.2, seed: int = 42) -> tuple["FeatureFrame", "FeatureFrame"]:
+    def split(self, test_frac: float = 0.2, seed: int = 42) -> tuple[FeatureFrame, FeatureFrame]:
         rng = np.random.default_rng(seed)
         idx = np.arange(len(self.X))
         rng.shuffle(idx)
         cut = int(len(idx) * (1 - test_frac))
         tr, te = idx[:cut], idx[cut:]
         return (
-            FeatureFrame(self.X.iloc[tr], self.y_hba1c.iloc[tr], self.y_dropout.iloc[tr], self.patient_ids[tr]),
-            FeatureFrame(self.X.iloc[te], self.y_hba1c.iloc[te], self.y_dropout.iloc[te], self.patient_ids[te]),
+            FeatureFrame(
+                self.X.iloc[tr],
+                self.y_hba1c.iloc[tr],
+                self.y_dropout.iloc[tr],
+                self.patient_ids[tr],
+            ),
+            FeatureFrame(
+                self.X.iloc[te],
+                self.y_hba1c.iloc[te],
+                self.y_dropout.iloc[te],
+                self.patient_ids[te],
+            ),
         )
 
 
@@ -53,7 +62,9 @@ def _build_lab_aggregates(labs: pd.DataFrame) -> pd.DataFrame:
     mean_w = labs.groupby(["patient_id", "name"])["value"].mean().unstack().add_suffix("_mean")
     min_w = labs.groupby(["patient_id", "name"])["value"].min().unstack().add_suffix("_min")
     max_w = labs.groupby(["patient_id", "name"])["value"].max().unstack().add_suffix("_max")
-    cnt_w = labs.groupby(["patient_id", "name"])["value"].count().unstack().add_suffix("_n").fillna(0)
+    cnt_w = (
+        labs.groupby(["patient_id", "name"])["value"].count().unstack().add_suffix("_n").fillna(0)
+    )
 
     return pd.concat([last_w, mean_w, min_w, max_w, cnt_w], axis=1)
 
@@ -73,8 +84,11 @@ def _build_engagement_features(events: pd.DataFrame, horizon_days: int = 30) -> 
     recent = ev[ev["ts"] >= cutoff]
 
     pivot = recent.pivot_table(
-        index="patient_id", columns="kind", values="value",
-        aggfunc=["sum", "count"], fill_value=0,
+        index="patient_id",
+        columns="kind",
+        values="value",
+        aggfunc=["sum", "count"],
+        fill_value=0,
     )
     pivot.columns = [f"{a}_{b}_30d" for a, b in pivot.columns]
 
@@ -82,7 +96,11 @@ def _build_engagement_features(events: pd.DataFrame, horizon_days: int = 30) -> 
     last_60 = ev[ev["ts"] >= ev["ts"].max() - pd.Timedelta(days=60)].copy()
     last_60["bucket"] = ((ev["ts"].max() - last_60["ts"]).dt.days // 14).astype(int)
     decay = last_60.pivot_table(
-        index="patient_id", columns="bucket", values="value", aggfunc="count", fill_value=0,
+        index="patient_id",
+        columns="bucket",
+        values="value",
+        aggfunc="count",
+        fill_value=0,
     ).add_prefix("ev_bucket_")
 
     return pivot.join(decay, how="outer").fillna(0)
@@ -132,13 +150,11 @@ def build_features(
 
     lab_features = _build_lab_aggregates(feature_labs)
     eng_features = _build_engagement_features(events)
-    static = patients.set_index("patient_id")[[c for c in ("sex", "birth_year") if c in patients.columns]]
+    static = patients.set_index("patient_id")[
+        [c for c in ("sex", "birth_year") if c in patients.columns]
+    ]
 
-    X = (
-        lab_features.join(eng_features, how="outer")
-        .join(static, how="outer")
-        .fillna(0)
-    )
+    X = lab_features.join(eng_features, how="outer").join(static, how="outer").fillna(0)
 
     if "sex" in X.columns:
         X = pd.concat(
@@ -187,7 +203,9 @@ def build_features(
         # that drop off early, not just those tailing off at the end.
         first_14 = ev[ev["ts"] <= first_day + pd.Timedelta(days=14)].groupby("patient_id").size()
         last_14 = ev[ev["ts"] >= last_day - pd.Timedelta(days=14)].groupby("patient_id").size()
-        joined = pd.concat([last_14.rename("recent"), first_14.rename("baseline")], axis=1).fillna(0)
+        joined = pd.concat([last_14.rename("recent"), first_14.rename("baseline")], axis=1).fillna(
+            0
+        )
         joined = joined.reindex(X.index, fill_value=0)
         y_dropout = ((joined["recent"] + 1) / (joined["baseline"] + 1) < 0.25).astype(int)
     else:

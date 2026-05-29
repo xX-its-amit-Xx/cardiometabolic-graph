@@ -45,12 +45,14 @@ def attribute(
     for ei, alpha, layer in [(ei1, a1, 1), (ei2, a2, 2)]:
         a = alpha.mean(dim=-1) if alpha.dim() > 1 else alpha
         for i in range(ei.size(1)):
-            rows.append(AttributionRow(
-                src_idx=int(ei[0, i]),
-                dst_idx=int(ei[1, i]),
-                weight=float(a[i]),
-                layer=layer,
-            ))
+            rows.append(
+                AttributionRow(
+                    src_idx=int(ei[0, i]),
+                    dst_idx=int(ei[1, i]),
+                    weight=float(a[i]),
+                    layer=layer,
+                )
+            )
 
     df = pd.DataFrame([r.__dict__ for r in rows])
     df = df.groupby(["src_idx", "dst_idx"])["weight"].sum().reset_index()
@@ -58,7 +60,9 @@ def attribute(
     return df
 
 
-def save_attribution(df: pd.DataFrame, patient_id: str, out_dir: Path = Path("artifacts/gnn")) -> Path:
+def save_attribution(
+    df: pd.DataFrame, patient_id: str, out_dir: Path = Path("artifacts/gnn")
+) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"attribution_{patient_id}.parquet"
     df.to_parquet(path, index=False)

@@ -6,12 +6,12 @@ import argparse
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
 from etl._common import log, synthetic_path
-
 
 HERE = Path(__file__).resolve().parent
 FIG_DIR = HERE / "figures"
@@ -40,16 +40,31 @@ def build_targets(top: int = 200, dropout_thresh: float = 0.40) -> pd.DataFrame:
         & (events["ts"] >= last_day - pd.Timedelta(days=60))
     ]
 
-    agg_recent = recent.groupby(["patient_id", "kind"]).size().unstack(fill_value=0).add_prefix("recent_")
-    agg_prior = prior.groupby(["patient_id", "kind"]).size().unstack(fill_value=0).add_prefix("prior_")
+    agg_recent = (
+        recent.groupby(["patient_id", "kind"]).size().unstack(fill_value=0).add_prefix("recent_")
+    )
+    agg_prior = (
+        prior.groupby(["patient_id", "kind"]).size().unstack(fill_value=0).add_prefix("prior_")
+    )
 
     last_open = events[events["kind"] == "app_open"].groupby("patient_id")["ts"].max()
     days_since_open = (last_day - last_open).dt.days.rename("days_since_last_open")
 
     df = drop.rename(columns={"p_dropout": "p_dropout"}).copy()
-    df = df.join(agg_recent, how="left").join(agg_prior, how="left").join(days_since_open, how="left")
-    df = df.fillna({"recent_app_open": 0, "recent_message_response": 0, "recent_glucose_log": 0,
-                    "prior_app_open": 0, "days_since_last_open": 999})
+    df = (
+        df.join(agg_recent, how="left")
+        .join(agg_prior, how="left")
+        .join(days_since_open, how="left")
+    )
+    df = df.fillna(
+        {
+            "recent_app_open": 0,
+            "recent_message_response": 0,
+            "recent_glucose_log": 0,
+            "prior_app_open": 0,
+            "days_since_last_open": 999,
+        }
+    )
 
     # Lapsing-but-recoverable filter
     mask = (
@@ -68,10 +83,18 @@ def build_targets(top: int = 200, dropout_thresh: float = 0.40) -> pd.DataFrame:
         - 0.1 * pool["days_since_last_open"]
     )
     pool = pool.sort_values("recoverability", ascending=False).head(top).reset_index()
-    return pool[[
-        "patient_id", "p_dropout", "recoverability", "days_since_last_open",
-        "recent_app_open", "recent_message_response", "recent_glucose_log", "prior_app_open",
-    ]]
+    return pool[
+        [
+            "patient_id",
+            "p_dropout",
+            "recoverability",
+            "days_since_last_open",
+            "recent_app_open",
+            "recent_message_response",
+            "recent_glucose_log",
+            "prior_app_open",
+        ]
+    ]
 
 
 def write_report(df: pd.DataFrame, out_dir: Path = HERE) -> None:

@@ -4,14 +4,12 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
 
 from etl._common import log, processed_path, synthetic_path
-
 
 HERE = Path(__file__).resolve().parent
 
@@ -19,13 +17,12 @@ HERE = Path(__file__).resolve().parent
 # We do not need to query Neo4j for this — the mapping is stable and is
 # documented in schema/graph_schema.md.
 FEATURE_TO_PATHWAYS: dict[str, list[tuple[str, str]]] = {
-    "HbA1c":             [("R-HSA-70171",  "Glycolysis")],
-    "glucose_serum":     [("R-HSA-70171",  "Glycolysis"),
-                          ("R-HSA-74160",  "Signaling by insulin")],
+    "HbA1c": [("R-HSA-70171", "Glycolysis")],
+    "glucose_serum": [("R-HSA-70171", "Glycolysis"), ("R-HSA-74160", "Signaling by insulin")],
     "cholesterol_total": [("R-HSA-556833", "Metabolism of lipids")],
-    "ldl":               [("R-HSA-556833", "Metabolism of lipids")],
-    "hdl":               [("R-HSA-556833", "Metabolism of lipids")],
-    "triglycerides":     [("R-HSA-556833", "Metabolism of lipids")],
+    "ldl": [("R-HSA-556833", "Metabolism of lipids")],
+    "hdl": [("R-HSA-556833", "Metabolism of lipids")],
+    "triglycerides": [("R-HSA-556833", "Metabolism of lipids")],
 }
 
 
@@ -54,8 +51,9 @@ def _load_artifacts(patient_id: str) -> dict:
 
     pred = pd.read_parquet(pred_path)
     if patient_id not in pred.index:
-        raise KeyError(f"patient_id {patient_id} not in predictions. "
-                       f"Available example: {pred.index[0]}")
+        raise KeyError(
+            f"patient_id {patient_id} not in predictions. " f"Available example: {pred.index[0]}"
+        )
 
     feats = pd.read_parquet(feat_path)
     out["features"] = feats.loc[patient_id] if patient_id in feats.index else pd.Series(dtype=float)
@@ -70,7 +68,9 @@ def _load_artifacts(patient_id: str) -> dict:
 
     if drop_path.exists():
         drop = pd.read_parquet(drop_path)
-        out["dropout"] = float(drop.loc[patient_id, "p_dropout"]) if patient_id in drop.index else None
+        out["dropout"] = (
+            float(drop.loc[patient_id, "p_dropout"]) if patient_id in drop.index else None
+        )
     else:
         out["dropout"] = None
 
@@ -103,22 +103,23 @@ def build_report(patient_id: str) -> str:
     art = _load_artifacts(patient_id)
     shap = art["shap"]
     top_features = (
-        shap.abs().sort_values(ascending=False).head(6).index.tolist()
-        if shap is not None else []
+        shap.abs().sort_values(ascending=False).head(6).index.tolist() if shap is not None else []
     )
 
     lines: list[str] = []
     lines.append("---")
     lines.append(f"patient_id: {patient_id}")
-    lines.append(f"generated_at: {datetime.now(timezone.utc).isoformat()}")
+    lines.append(f"generated_at: {datetime.now(UTC).isoformat()}")
     lines.append(f"model_version: {_model_version_hash()}")
     lines.append("---")
     lines.append("")
     lines.append(f"# Evidence trail — `{patient_id}`")
     lines.append("")
     lines.append(f"**Last observed HbA1c:** {art['last_hba1c']:.2f}%")
-    lines.append(f"**Predicted next HbA1c:** {art['pred_next']:.2f}%  "
-                 f"(Δ {art['pred_next'] - art['last_hba1c']:+.2f})")
+    lines.append(
+        f"**Predicted next HbA1c:** {art['pred_next']:.2f}%  "
+        f"(Δ {art['pred_next'] - art['last_hba1c']:+.2f})"
+    )
     if art["dropout"] is not None:
         lines.append(f"**Engagement dropout risk:** {art['dropout']:.0%}")
     lines.append("")
@@ -138,7 +139,9 @@ def build_report(patient_id: str) -> str:
             if cites:
                 lines.append("- Linked pathways:")
                 for pid, pname in cites:
-                    lines.append(f"  - [{pid}](https://reactome.org/PathwayBrowser/#/{pid}) — {pname}")
+                    lines.append(
+                        f"  - [{pid}](https://reactome.org/PathwayBrowser/#/{pid}) — {pname}"
+                    )
             else:
                 lines.append("- No direct pathway link in the curated map.")
             lines.append("")
@@ -185,7 +188,9 @@ def build_report(patient_id: str) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--patient", required=True, help="Patient ID, e.g. SYN000017 or MIMIC10000032")
+    parser.add_argument(
+        "--patient", required=True, help="Patient ID, e.g. SYN000017 or MIMIC10000032"
+    )
     args = parser.parse_args()
 
     report = build_report(args.patient)

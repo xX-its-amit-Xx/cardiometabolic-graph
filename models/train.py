@@ -29,25 +29,35 @@ def _load_inputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFra
     events_p = synthetic_path() / "engagement_events.parquet"
     arche_p = synthetic_path() / "engagement_archetypes.parquet"
 
-    labs = pd.read_parquet(labs_p) if labs_p.exists() else pd.DataFrame(
-        columns=["patient_id", "name", "value", "taken_ts"]
+    labs = (
+        pd.read_parquet(labs_p)
+        if labs_p.exists()
+        else pd.DataFrame(columns=["patient_id", "name", "value", "taken_ts"])
     )
-    patients = pd.read_parquet(pats_p) if pats_p.exists() else pd.DataFrame(
-        columns=["patient_id", "sex", "birth_year"]
+    patients = (
+        pd.read_parquet(pats_p)
+        if pats_p.exists()
+        else pd.DataFrame(columns=["patient_id", "sex", "birth_year"])
     )
-    events = pd.read_parquet(events_p) if events_p.exists() else pd.DataFrame(
-        columns=["patient_id", "kind", "ts", "value"]
+    events = (
+        pd.read_parquet(events_p)
+        if events_p.exists()
+        else pd.DataFrame(columns=["patient_id", "kind", "ts", "value"])
     )
-    archetypes = pd.read_parquet(arche_p) if arche_p.exists() else pd.DataFrame(
-        columns=["patient_id", "archetype"]
+    archetypes = (
+        pd.read_parquet(arche_p)
+        if arche_p.exists()
+        else pd.DataFrame(columns=["patient_id", "archetype"])
     )
 
     if patients.empty and not events.empty:
-        patients = pd.DataFrame({
-            "patient_id": events["patient_id"].unique(),
-            "sex": "U",
-            "birth_year": 1980,
-        })
+        patients = pd.DataFrame(
+            {
+                "patient_id": events["patient_id"].unique(),
+                "sex": "U",
+                "birth_year": 1980,
+            }
+        )
     elif not patients.empty and not events.empty:
         # MIMIC loader populates patients.parquet with the 100 demo
         # patients. The 500 synthetic patients only appear in the
@@ -56,11 +66,13 @@ def _load_inputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFra
         # made age-based filters trip in unexpected ways downstream.
         missing = set(events["patient_id"].unique()) - set(patients["patient_id"])
         if missing:
-            synth_patients = pd.DataFrame({
-                "patient_id": list(missing),
-                "sex": "U",
-                "birth_year": 1980,
-            })
+            synth_patients = pd.DataFrame(
+                {
+                    "patient_id": list(missing),
+                    "sex": "U",
+                    "birth_year": 1980,
+                }
+            )
             patients = pd.concat([patients, synth_patients], ignore_index=True)
 
     return labs, events, patients, archetypes
@@ -92,6 +104,7 @@ def main() -> None:
             log.info("HbA1c GBM -> Pearson r=%.3f, MAE=%.3f", result.pearson_r, result.mae)
         else:
             from .gnn_hba1c import train_gnn
+
             result = train_gnn(train.X, train.y_hba1c, test.X, test.y_hba1c, epochs=args.epochs)
             log.info("HbA1c GNN -> Pearson r=%.3f, MAE=%.3f", result.pearson_r, result.mae)
     else:

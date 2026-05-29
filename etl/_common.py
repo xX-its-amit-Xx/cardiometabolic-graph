@@ -10,11 +10,11 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Iterator
 
 from dotenv import load_dotenv
 
@@ -35,7 +35,7 @@ class PostgresConfig:
     password: str
 
     @classmethod
-    def from_env(cls) -> "PostgresConfig":
+    def from_env(cls) -> PostgresConfig:
         return cls(
             host=os.getenv("POSTGRES_HOST", "localhost"),
             port=int(os.getenv("POSTGRES_PORT", "5432")),
@@ -46,9 +46,7 @@ class PostgresConfig:
 
     @property
     def dsn(self) -> str:
-        return (
-            f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}"
-        )
+        return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}"
 
 
 @dataclass(frozen=True)
@@ -59,7 +57,7 @@ class Neo4jConfig:
     database: str
 
     @classmethod
-    def from_env(cls) -> "Neo4jConfig":
+    def from_env(cls) -> Neo4jConfig:
         return cls(
             uri=os.getenv("NEO4J_URI", "bolt://localhost:7687"),
             user=os.getenv("NEO4J_USER", "neo4j"),
@@ -84,7 +82,7 @@ def neo4j_session() -> Iterator:
 
 
 def now_utc() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def chunked(iterable, size: int):

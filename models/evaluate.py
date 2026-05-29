@@ -22,7 +22,7 @@ def _load(path: Path) -> dict | None:
 def build_report() -> str:
     gbm_hba1c = _load(ARTIFACTS / "gbm" / "gbm_hba1c_result.json")
     gnn_hba1c = _load(ARTIFACTS / "gnn" / "gnn_hba1c_result.json")
-    dropout   = _load(ARTIFACTS / "dropout" / "dropout_result.json")
+    dropout = _load(ARTIFACTS / "dropout" / "dropout_result.json")
 
     lines = ["# Model report\n"]
     lines.append("## HbA1c trajectory (regression)\n")

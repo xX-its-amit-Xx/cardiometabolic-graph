@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
 
 from etl._common import log, processed_path, synthetic_path
 from summarizer import PatientFacts, SummaryRequest, get_summarizer
-
 
 HERE = Path(__file__).resolve().parent
 
@@ -88,12 +87,14 @@ def build_pa_note(patient_id: str, drug: str, prior_tried: list[str]) -> str:
     six_mo = hba1c_series[
         hba1c_series["taken_ts"] >= hba1c_series["taken_ts"].max() - pd.Timedelta(days=180)
     ]
-    delta_6mo = float(six_mo["value"].iloc[-1] - six_mo["value"].iloc[0]) if len(six_mo) >= 2 else None
+    delta_6mo = (
+        float(six_mo["value"].iloc[-1] - six_mo["value"].iloc[0]) if len(six_mo) >= 2 else None
+    )
 
     lines: list[str] = []
     lines.append(f"# Prior authorization request — `{patient_id}`")
     lines.append("")
-    lines.append(f"**Generated:** {datetime.now(timezone.utc).date().isoformat()}")
+    lines.append(f"**Generated:** {datetime.now(UTC).date().isoformat()}")
     lines.append(f"**Requested therapy:** {drug}")
     lines.append(f"**Summarizer backend:** `{summarizer.name}`")
     lines.append("")
@@ -111,12 +112,18 @@ def build_pa_note(patient_id: str, drug: str, prior_tried: list[str]) -> str:
         lines.append(f"| Last HbA1c | {facts.last_hba1c:.1f}% | ≥7.0% (uncontrolled T2D) | {met} |")
     if delta_6mo is not None:
         met = "✓" if delta_6mo >= 0.0 else "✗"
-        lines.append(f"| 6-month HbA1c change | {delta_6mo:+.2f}% | Not improving on current regimen | {met} |")
+        lines.append(
+            f"| 6-month HbA1c change | {delta_6mo:+.2f}% | Not improving on current regimen | {met} |"
+        )
     if facts.last_ldl is not None:
-        lines.append(f"| Last LDL | {facts.last_ldl:.0f} mg/dL | (CV risk factor — context only) | — |")
+        lines.append(
+            f"| Last LDL | {facts.last_ldl:.0f} mg/dL | (CV risk factor — context only) | — |"
+        )
     eng_total = facts.app_opens_30d + facts.message_responses_30d + facts.glucose_logs_30d
     met = "✓" if eng_total >= 10 else "✗"
-    lines.append(f"| 30-day platform engagement | {eng_total} events | ≥10 (active behavioral participation) | {met} |")
+    lines.append(
+        f"| 30-day platform engagement | {eng_total} events | ≥10 (active behavioral participation) | {met} |"
+    )
     lines.append("")
 
     lines.append("## Prior therapies attempted")

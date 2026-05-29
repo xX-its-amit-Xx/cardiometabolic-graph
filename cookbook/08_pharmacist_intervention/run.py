@@ -6,12 +6,12 @@ import argparse
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
 from etl._common import log, processed_path, synthetic_path
-
 
 HERE = Path(__file__).resolve().parent
 FIG_DIR = HERE / "figures"
@@ -39,10 +39,14 @@ def _adherence_dropoff(ev: pd.DataFrame) -> pd.Series:
     ev["ts"] = pd.to_datetime(ev["ts"], utc=True)
     last_day = ev["ts"].max()
     last_30 = ev[ev["ts"] >= last_day - pd.Timedelta(days=30)].groupby("patient_id").size()
-    prev_30 = ev[
-        (ev["ts"] >= last_day - pd.Timedelta(days=60))
-        & (ev["ts"] < last_day - pd.Timedelta(days=30))
-    ].groupby("patient_id").size()
+    prev_30 = (
+        ev[
+            (ev["ts"] >= last_day - pd.Timedelta(days=60))
+            & (ev["ts"] < last_day - pd.Timedelta(days=30))
+        ]
+        .groupby("patient_id")
+        .size()
+    )
     df = pd.concat([last_30.rename("recent"), prev_30.rename("prior")], axis=1).fillna(0)
     # +1 smoothing avoids divide-by-zero for never-loggers
     df["dropoff"] = ((df["prior"] + 1) - (df["recent"] + 1)).clip(lower=0) / (df["prior"] + 1)
@@ -75,10 +79,7 @@ def rank(top: int = 30) -> pd.DataFrame:
     labs["taken_ts"] = pd.to_datetime(labs["taken_ts"], utc=True)
     hba1c_only = labs[labs["name"] == "HbA1c"]
     last_hba1c = (
-        hba1c_only.sort_values("taken_ts")
-        .groupby("patient_id")["value"]
-        .last()
-        .astype(float)
+        hba1c_only.sort_values("taken_ts").groupby("patient_id")["value"].last().astype(float)
     )
 
     df = pd.DataFrame(index=features.index)
@@ -88,27 +89,36 @@ def rank(top: int = 30) -> pd.DataFrame:
     df["adherence_dropoff"] = dropoff
     df["other_failing"] = failing
     df["leverage_score"] = (
-        df["delta"].fillna(0) * 2.0
-        + df["adherence_dropoff"] * 1.5
-        - df["other_failing"] * 0.5
+        df["delta"].fillna(0) * 2.0 + df["adherence_dropoff"] * 1.5 - df["other_failing"] * 0.5
     )
     # Drop patients without a prediction OR without an observed HbA1c —
     # a pharmacist call without baseline is wasted leverage.
     df = df.dropna(subset=["predicted_hba1c", "last_hba1c"])
-    return df.sort_values("leverage_score", ascending=False).head(top).reset_index().rename(
-        columns={"index": "patient_id"}
+    return (
+        df.sort_values("leverage_score", ascending=False)
+        .head(top)
+        .reset_index()
+        .rename(columns={"index": "patient_id"})
     )
 
 
 def _script_bullets(row: pd.Series) -> list[str]:
     bullets = []
     if row["adherence_dropoff"] >= 0.4:
-        bullets.append("Glucose logging dropped >40% over the last 30 days — confirm meter/CGM is working and reachable.")
+        bullets.append(
+            "Glucose logging dropped >40% over the last 30 days — confirm meter/CGM is working and reachable."
+        )
     if row["delta"] >= 0.3:
-        bullets.append(f"Predicted HbA1c rise (+{row['delta']:.2f}%) — verify last refill date and pill-count.")
+        bullets.append(
+            f"Predicted HbA1c rise (+{row['delta']:.2f}%) — verify last refill date and pill-count."
+        )
     if row["other_failing"] >= 2:
-        bullets.append("Multiple lipid panel members out of range — confirm statin dose and adherence.")
-    bullets.append("Ask about GI side effects (esp. for GLP-1 / metformin) and CGM tape skin reactions.")
+        bullets.append(
+            "Multiple lipid panel members out of range — confirm statin dose and adherence."
+        )
+    bullets.append(
+        "Ask about GI side effects (esp. for GLP-1 / metformin) and CGM tape skin reactions."
+    )
     bullets.append("Schedule a 90-day follow-up call to close the loop.")
     return bullets
 

@@ -112,7 +112,23 @@ extend-exclude = ["notebooks", "data"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "PL", "N"]
-ignore = ["PLR0913", "PLR2004", "E501"]
+ignore = [
+    "PLR0913",  # too many args — typical for ML/pipeline functions
+    "PLR2004",  # magic numbers — common in clinical thresholds
+    "PLR0911",  # too many returns — fine for our small evaluators
+    "PLR0912",  # too many branches — fine for evaluators
+    "PLR0915",  # too many statements — fine for pipeline scripts
+    "PLW2901", # loop var overwrite — common pattern in chunked pandas
+    "PLC0415", # inline imports — needed for lazy-load LLM deps + tests
+    "N803",    # uppercase function args — X / y is the ML convention
+    "N806",    # uppercase local variables — X / y is the ML convention
+    "N812",    # lowercase imports as uppercase — rare cases
+    "B008",    # function calls in argument defaults — used for Path() defaults
+    "RUF001",  # ambiguous unicode (en-dash) — intentional in docstrings
+    "RUF002",  # ambiguous unicode in docstrings
+    "RUF003",  # ambiguous unicode in comments
+    "E501",    # line too long
+]
 
 [tool.black]
 line-length = 100

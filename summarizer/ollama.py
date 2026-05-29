@@ -60,9 +60,7 @@ class OllamaBackend:
         }
         payload = json.dumps(body).encode("utf-8")
         url = f"{self.host}/api/chat"
-        http_req = request.Request(
-            url, data=payload, headers={"Content-Type": "application/json"}
-        )
+        http_req = request.Request(url, data=payload, headers={"Content-Type": "application/json"})
         try:
             with request.urlopen(http_req, timeout=self.timeout) as resp:
                 data = json.loads(resp.read().decode("utf-8"))

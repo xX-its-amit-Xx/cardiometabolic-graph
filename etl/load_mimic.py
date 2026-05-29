@@ -31,12 +31,12 @@ from ._common import PostgresConfig, log, now_utc, raw_path
 # Curated LOINC / MIMIC item codes for cardiometabolic workup.
 # Real MIMIC encodes labs by itemid; we map a small subset by hand for the demo.
 CARDIO_LOINC = {
-    "4548-4":  "HbA1c",                # LOINC for glycated hemoglobin
-    "2345-7":  "glucose_serum",
-    "2093-3":  "cholesterol_total",
-    "2085-9":  "hdl",
-    "2089-1":  "ldl",
-    "2571-8":  "triglycerides",
+    "4548-4": "HbA1c",  # LOINC for glycated hemoglobin
+    "2345-7": "glucose_serum",
+    "2093-3": "cholesterol_total",
+    "2085-9": "hdl",
+    "2089-1": "ldl",
+    "2571-8": "triglycerides",
 }
 
 CARDIO_VITAL_NAMES = {
@@ -47,7 +47,9 @@ CARDIO_VITAL_NAMES = {
 }
 
 
-def _read_table(mimic_dir: Path, name: str, chunksize: int) -> pd.io.parsers.TextFileReader | pd.DataFrame:
+def _read_table(
+    mimic_dir: Path, name: str, chunksize: int
+) -> pd.io.parsers.TextFileReader | pd.DataFrame:
     """Locate a MIMIC-IV CSV across hosp/ and icu/ subdirs."""
     for subdir in ("hosp", "icu", ""):
         path = mimic_dir / subdir / f"{name}.csv.gz"
@@ -130,8 +132,10 @@ def _upsert(engine, table: str, df: pd.DataFrame, pk: str) -> int:
     """Idempotent upsert via temp table + ON CONFLICT."""
     if df.empty:
         return 0
-    tmp = f"_stg_{table.split('.')[-1]}"
-    df.to_sql(tmp, engine, schema=None, if_exists="replace", index=False, method="multi", chunksize=10_000)
+    tmp = f"_stg_{table.rsplit('.', maxsplit=1)[-1]}"
+    df.to_sql(
+        tmp, engine, schema=None, if_exists="replace", index=False, method="multi", chunksize=10_000
+    )
     cols = ",".join(df.columns)
     excluded = ",".join(f"{c}=EXCLUDED.{c}" for c in df.columns if c != pk)
     sql = f"""
@@ -179,9 +183,7 @@ def load_labevents(engine, mimic_dir: Path, chunksize: int) -> int:
             d_items = next(d_items)
         d_items.columns = [c.lower() for c in d_items.columns]
         itemid_to_loinc = (
-            d_items.dropna(subset=["loinc_code"])
-            .set_index("itemid")["loinc_code"]
-            .to_dict()
+            d_items.dropna(subset=["loinc_code"]).set_index("itemid")["loinc_code"].to_dict()
         )
         itemid_to_name = d_items.set_index("itemid")["label"].to_dict()
     except FileNotFoundError:

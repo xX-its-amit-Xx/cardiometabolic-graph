@@ -39,21 +39,29 @@ ARCHETYPE_PROBS = (0.15, 0.45, 0.25, 0.15)
 
 @dataclass(frozen=True)
 class ArchetypeParams:
-    open_rate: float        # mean app opens per day at t=0
-    response_p: float       # baseline message-response probability
-    decay: float            # daily exponential decay on the rate
+    open_rate: float  # mean app opens per day at t=0
+    response_p: float  # baseline message-response probability
+    decay: float  # daily exponential decay on the rate
     burst_around_labs: bool
 
 
 PARAMS: dict[str, ArchetypeParams] = {
-    "power_user":    ArchetypeParams(open_rate=4.5, response_p=0.85, decay=0.0005, burst_around_labs=False),
-    "steady":        ArchetypeParams(open_rate=2.0, response_p=0.60, decay=0.0020, burst_around_labs=False),
-    "episodic":      ArchetypeParams(open_rate=0.8, response_p=0.50, decay=0.0010, burst_around_labs=True),
+    "power_user": ArchetypeParams(
+        open_rate=4.5, response_p=0.85, decay=0.0005, burst_around_labs=False
+    ),
+    "steady": ArchetypeParams(
+        open_rate=2.0, response_p=0.60, decay=0.0020, burst_around_labs=False
+    ),
+    "episodic": ArchetypeParams(
+        open_rate=0.8, response_p=0.50, decay=0.0010, burst_around_labs=True
+    ),
     # decay=0.035 (≈3.5% per day) lands early_dropout total events in the
     # 300-400 range over 180 days — still distinctly lower than steady, but
     # overlapping enough that AUROC sits in the realistic 0.85-0.92 range
     # rather than the previous synthetic-perfect 1.0.
-    "early_dropout": ArchetypeParams(open_rate=3.5, response_p=0.40, decay=0.0350, burst_around_labs=False),
+    "early_dropout": ArchetypeParams(
+        open_rate=3.5, response_p=0.40, decay=0.0350, burst_around_labs=False
+    ),
 }
 
 
@@ -111,7 +119,9 @@ def _generate_one_patient(
                 hours=int(rng.integers(8, 21)),
                 minutes=int(rng.integers(0, 60)),
             )
-            rows.append({"patient_id": patient_id, "kind": "message_response", "ts": ts, "value": 1.0})
+            rows.append(
+                {"patient_id": patient_id, "kind": "message_response", "ts": ts, "value": 1.0}
+            )
 
         # Glucose log entries: thinned by app opens
         glog_rate = 0.4 * n_opens
@@ -178,14 +188,18 @@ def generate(
                     )
         frames.append(own)
 
-    events = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(
-        columns=["patient_id", "kind", "ts", "value"]
+    events = (
+        pd.concat(frames, ignore_index=True)
+        if frames
+        else pd.DataFrame(columns=["patient_id", "kind", "ts", "value"])
     )
     return events, archetype_df
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--out", type=Path, default=Path("data/synthetic"))
     parser.add_argument("--patients", type=int, default=500)
     parser.add_argument("--days", type=int, default=180)

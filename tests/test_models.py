@@ -16,7 +16,9 @@ import pytest
 from models._features import FeatureFrame, build_features
 
 
-def test_feature_frame_construction(tiny_labs, tiny_synthetic_events, tiny_patients, tmp_path, monkeypatch):
+def test_feature_frame_construction(
+    tiny_labs, tiny_synthetic_events, tiny_patients, tmp_path, monkeypatch
+):
     monkeypatch.setenv("CMG_DATA_PROCESSED", str(tmp_path))
     ff = build_features(tiny_labs, tiny_synthetic_events, tiny_patients, cache=False)
     assert isinstance(ff, FeatureFrame)
@@ -27,7 +29,9 @@ def test_feature_frame_construction(tiny_labs, tiny_synthetic_events, tiny_patie
     assert len(ff.y_dropout) == len(ff.X)
 
 
-def test_split_preserves_row_counts(tiny_labs, tiny_synthetic_events, tiny_patients, tmp_path, monkeypatch):
+def test_split_preserves_row_counts(
+    tiny_labs, tiny_synthetic_events, tiny_patients, tmp_path, monkeypatch
+):
     monkeypatch.setenv("CMG_DATA_PROCESSED", str(tmp_path))
     ff = build_features(tiny_labs, tiny_synthetic_events, tiny_patients, cache=False)
     tr, te = ff.split(test_frac=0.25, seed=1)
@@ -36,7 +40,9 @@ def test_split_preserves_row_counts(tiny_labs, tiny_synthetic_events, tiny_patie
 
 
 @pytest.mark.slow
-def test_gbm_baseline_runs_and_predicts(tiny_labs, tiny_synthetic_events, tiny_patients, tmp_path, monkeypatch):
+def test_gbm_baseline_runs_and_predicts(
+    tiny_labs, tiny_synthetic_events, tiny_patients, tmp_path, monkeypatch
+):
     monkeypatch.setenv("CMG_DATA_PROCESSED", str(tmp_path))
     from models.gbm_baseline import train_regressor
 
@@ -50,7 +56,9 @@ def test_gbm_baseline_runs_and_predicts(tiny_labs, tiny_synthetic_events, tiny_p
 
 
 @pytest.mark.slow
-def test_dropout_classifier_runs(tiny_labs, tiny_synthetic_events, tiny_patients, tmp_path, monkeypatch):
+def test_dropout_classifier_runs(
+    tiny_labs, tiny_synthetic_events, tiny_patients, tmp_path, monkeypatch
+):
     monkeypatch.setenv("CMG_DATA_PROCESSED", str(tmp_path))
     from models.engagement_dropout import train_dropout
 
@@ -66,11 +74,19 @@ def test_summary_template_is_deterministic():
     from dashboard._summary import PatientSummaryInputs, build_summary
 
     inp = PatientSummaryInputs(
-        patient_id="X", last_hba1c=7.0, pred_hba1c_next=7.3,
-        pred_hba1c_low=6.9, pred_hba1c_high=7.7,
-        last_ldl=110, last_bp_sys=125, last_bp_dia=78,
-        app_opens_30d=10, message_responses_30d=3, glucose_logs_30d=5,
-        dropout_risk=0.18, top_factors=[("HbA1c_last", 0.4)],
+        patient_id="X",
+        last_hba1c=7.0,
+        pred_hba1c_next=7.3,
+        pred_hba1c_low=6.9,
+        pred_hba1c_high=7.7,
+        last_ldl=110,
+        last_bp_sys=125,
+        last_bp_dia=78,
+        app_opens_30d=10,
+        message_responses_30d=3,
+        glucose_logs_30d=5,
+        dropout_risk=0.18,
+        top_factors=[("HbA1c_last", 0.4)],
     )
     a = build_summary(inp)
     b = build_summary(inp)

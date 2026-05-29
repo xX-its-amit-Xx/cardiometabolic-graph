@@ -29,9 +29,9 @@ import pandas as pd
 
 ARCHETYPE_BASE: dict[str, tuple[float, float, float]] = {
     # archetype -> (mean HbA1c, sd HbA1c, drift per 90 days)
-    "power_user":    (6.0, 0.4, -0.10),
-    "steady":        (6.8, 0.7, +0.00),
-    "episodic":      (7.4, 1.1, +0.15),
+    "power_user": (6.0, 0.4, -0.10),
+    "steady": (6.8, 0.7, +0.00),
+    "episodic": (7.4, 1.1, +0.15),
     "early_dropout": (8.0, 1.3, +0.30),
 }
 
@@ -78,15 +78,17 @@ def generate_labs(
             labs_visit = _derive_labs(visit_hba1c, rng)
             ts = (start_date + timedelta(days=int(offset_days))).isoformat()
             for name, value in labs_visit.items():
-                rows.append({
-                    "patient_id": pid,
-                    "name": name,
-                    "value": value,
-                    "unit": _UNITS[name],
-                    "taken_ts": ts,
-                    "visit_idx": visit_idx,
-                    "source_system": "synthetic-v1",
-                })
+                rows.append(
+                    {
+                        "patient_id": pid,
+                        "name": name,
+                        "value": value,
+                        "unit": _UNITS[name],
+                        "taken_ts": ts,
+                        "visit_idx": visit_idx,
+                        "source_system": "synthetic-v1",
+                    }
+                )
     return pd.DataFrame(rows)
 
 
@@ -102,7 +104,9 @@ _UNITS = {
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--archetypes", type=Path, default=Path("data/synthetic/engagement_archetypes.parquet"))
+    parser.add_argument(
+        "--archetypes", type=Path, default=Path("data/synthetic/engagement_archetypes.parquet")
+    )
     parser.add_argument("--out", type=Path, default=Path("data/processed/labs.parquet"))
     parser.add_argument("--days", type=int, default=180)
     parser.add_argument("--seed", type=int, default=13)
