@@ -95,6 +95,7 @@ packages = [
     "data.synthetic",
     "cookbook",
     "summarizer",
+    "evaluation",
 ]
 
 [tool.setuptools.package-data]
