@@ -297,13 +297,22 @@ cookbook is the part most likely to benefit from real examples.
 
 | Item | Why | Status |
 |------|-----|--------|
-| GNN ablations (no-pathway, no-engagement, single-relation) | Quantify which signal class actually moves the score | Pending |
-| Federated-learning variant (FedAvg over per-site graphs) | Real DTx data lives behind site boundaries | Pending |
-| FHIR ingestion adapter | Production EHRs speak FHIR, not CSV | Pending |
-| MedCAT-based clinical-notes extraction | Adds free-text-derived symptoms and meds to the graph | Pending |
-| Causal layer (do-calculus on the graph) | Move beyond predictive scores to intervention reasoning | Pending |
+| MIMIC-IV demo ingestion (parquet path) | Real clinical labs, no Docker required | ✅ Done (iter 2) |
+| GNN baseline + ablation study | Quantify which signal class moves the score | ✅ Done (iter 3) |
+| Per-patient GNN attention attribution | Map predictions back to neighborhood structure | ✅ Done (iter 3) |
+| Open-weight LLM summarizer (Ollama + HF) | No proprietary API key required | ✅ Done (iter 4) |
+| Field-standard evaluation + EVALUATION.md | Grade every use case against published reference ranges | ✅ Done (iter 5) |
+| HbA1c delta regressor | Predict change, not level (pharmacist leverage) | ✅ Done (iter 5) |
+| Isotonic calibration (optional) | Sharpen probability estimates at deployment scale | ✅ Done (iter 5, opt-in) |
+| Model card + data governance doc | Production readiness — the things a CTO asks before adopting | Planned (iter 6) |
+| Federated-learning variant (FedAvg over per-site graphs) | Real DTx data lives behind site boundaries | Planned |
+| FHIR ingestion adapter | Production EHRs speak FHIR, not CSV | Planned |
+| MedCAT-based clinical-notes extraction | Adds free-text-derived symptoms and meds to the graph | Planned |
+| Causal layer (do-calculus on the graph) | Move beyond predictive scores to intervention reasoning | Planned |
 
-PRs welcome on any of these — see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+See [`ITERATIONS.md`](ITERATIONS.md) for the per-iteration log of what
+landed and what didn't. PRs welcome on any planned item —
+[`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ---
 
@@ -315,17 +324,25 @@ cardiometabolic-graph/
 │   ├── raw/                    # gitignored — drop MIMIC / NHANES / Reactome here
 │   ├── processed/              # cached parquet feature frames
 │   └── synthetic/              # synthetic engagement events + generator script
-├── etl/                        # MIMIC, NHANES, pathways loaders + graph builder
+├── etl/                        # MIMIC, NHANES, pathways loaders + Neo4j graph builder
+│                               #   load_mimic_parquet.py is the Docker-free MIMIC path
 ├── schema/                     # graph_schema.md + cypher_constraints.cql
-├── models/                     # GNN, LightGBM, dropout, train, evaluate
+├── models/                     # LightGBM baseline, GNN, dropout, delta regressor,
+│                               #   calibration, train, evaluate, ablations
 ├── explain/                    # SHAP + GNN attention attribution
+├── summarizer/                 # Pluggable summary backends (deterministic / ollama /
+│                               #   transformers) — no proprietary LLM required
+├── evaluation/                 # Clinical-ML metrics + expected ranges + use-case graders
 ├── dashboard/                  # Streamlit clinician view + deterministic summary template
-├── cookbook/                   # Four real-world worked examples
+├── cookbook/                   # Eight real-world worked examples (01-08)
 ├── notebooks/                  # Walkthroughs (exploration, graph build, training, interpretation)
-├── tests/                      # pytest — ETL, schema, models
+├── scripts/                    # Screenshot capture, evaluation runner
+├── tests/                      # pytest — ETL, schema, models, summarizer
+├── docs/                       # EVALUATION.md, screenshots, figures
 ├── docker-compose.yml          # Postgres + Neo4j + Jupyter
-├── pyproject.toml              # package + dev deps
+├── pyproject.toml              # package + dev / llm-local extras
 ├── Makefile                    # entry points for everything above
+├── ITERATIONS.md               # per-iteration log
 ├── CONTRIBUTING.md             # how to contribute
 └── CODE_OF_CONDUCT.md          # Contributor Covenant
 ```

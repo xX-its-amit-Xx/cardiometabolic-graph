@@ -77,14 +77,18 @@ Issues = "https://github.com/amitshenoy/cardiometabolic-graph/issues"
 
 [project.scripts]
 cmg-load-mimic = "etl.load_mimic:main"
+cmg-load-mimic-parquet = "etl.load_mimic_parquet:main"
 cmg-load-nhanes = "etl.load_nhanes:main"
 cmg-load-pathways = "etl.load_pathways:main"
 cmg-build-graph = "etl.build_graph:main"
 cmg-train = "models.train:main"
 cmg-evaluate = "models.evaluate:main"
 cmg-synth-engagement = "data.synthetic.generate_engagement_logs:main"
+cmg-synth-labs = "data.synthetic.generate_labs:main"
 cmg-ablations = "models.ablations:main"
 cmg-attention-figure = "explain.attention_figure:main"
+cmg-delta = "models.delta_regressor:main"
+cmg-calibrate = "models.calibrate:main"
 
 [tool.setuptools]
 packages = [
